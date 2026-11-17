@@ -35,6 +35,7 @@ export default async function CranesPage({ searchParams }: { searchParams: Searc
         eyebrow="FIRM cycle"
         title="Crane register"
         description="Every crane in the cycle with its single current status, final category and SAP execution date. Click a row for the full record."
+        help="Each crane has exactly one of 20 statuses. Filters combine; the table scrolls horizontally on small screens."
         actions={
           <Link href="/import" className="btn btn-primary">
             <Truck size={14} /> Upload fleet

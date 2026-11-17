@@ -17,6 +17,7 @@ export default async function ImportPage() {
         eyebrow="FIRM cycle"
         title="Upload fleet"
         description="FP&A opens the cycle with the standard workbook. Validate first — errors block the commit. Once committed, Sales and Maintenance checks open together for every crane."
+        help="The template has five crane fields and four SAP/SO fields. SO End Date becomes Execution allowed from, and errors block the commit."
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.85fr_1fr]">

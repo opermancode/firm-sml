@@ -16,6 +16,7 @@ export default async function SettingsPage() {
         eyebrow="System"
         title="Rules & settings"
         description="The business rules from the FIRM document shown as reference. The workflow store lives in .data/firm-workflow.json and is seeded on first run."
+        help="Reference rules from the document: approval matrix, conflict decisions, proposed windows and the upload fields."
       />
 
       <div className="grid gap-4 xl:grid-cols-2">

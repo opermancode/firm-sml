@@ -64,6 +64,7 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
         eyebrow={`Crane · ${crane.equipmentId}`}
         title={crane.description}
         description={`YOM ${crane.yom} · ${crane.age} years old · yield ${crane.yieldPct}% · utilisation ${crane.utilisationPct}%`}
+        help="The single source of truth for one crane: flags, parallel checks, quotes, SAP data and the full audit trail."
         actions={<StatusChip status={crane.status} />}
       />
 

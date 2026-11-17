@@ -26,6 +26,7 @@ export default async function CycleDetailPage({ params }: { params: Promise<{ id
         eyebrow={`Cycle ${cycle.id}`}
         title={cycle.name}
         description={`Evaluation date ${dateLabel(cycle.evaluationDate)} · opened by ${cycle.openedBy} · ${cycle.status}`}
+        help="The status breakdown shows how many cranes sit at each of the 20 steps in this cycle."
         actions={<Link href="/import" className="btn btn-secondary">Upload fleet</Link>}
       />
 

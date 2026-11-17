@@ -1,13 +1,17 @@
+import { InfoTip } from "@/components/info-tip";
+
 export function PageHeader({
   eyebrow,
   title,
   description,
   actions,
+  help,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   actions?: React.ReactNode;
+  help?: string;
 }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -20,9 +24,12 @@ export function PageHeader({
             </span>
           </div>
         )}
-        <h1 className="font-display text-[24px] font-semibold leading-tight tracking-[-0.025em] text-ink sm:text-[26px]">
-          {title}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-display text-[24px] font-semibold leading-tight tracking-[-0.025em] text-ink sm:text-[26px]">
+            {title}
+          </h1>
+          {help && <InfoTip text={help} label={`About ${title}`} />}
+        </div>
         {description && (
           <p className="mt-1.5 max-w-3xl text-[12.5px] leading-relaxed text-muted">
             {description}

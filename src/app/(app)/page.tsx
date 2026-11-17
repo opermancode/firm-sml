@@ -12,6 +12,7 @@ import { getApprovalQueue, getDashboard } from "@/lib/firm/api";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/kpi-card";
 import { StatusChip } from "@/components/status-chip";
+import { StatusBars } from "@/components/charts/status-bars";
 import { EmptyState } from "@/components/empty-state";
 import { STATUSES, STATUS_MAP, ROLE_MAP, type Role } from "@/lib/firm/workflow";
 import { dateLabel } from "@/lib/format";
@@ -29,6 +30,7 @@ export default async function DashboardPage() {
         eyebrow="FIRM cycle"
         title="Cycle dashboard"
         description={`One place to see every crane in the exit cycle, what is waiting on approval, and what SAP has locked. You are signed in as ${role?.name ?? user.role}.`}
+        help="The dashboard shows the current cycle, counts by status, what is waiting on you, conflicts and every active SO end date."
         actions={
           <>
             <Link href="/cranes" className="btn btn-secondary">
@@ -77,7 +79,15 @@ export default async function DashboardPage() {
             </div>
             <Link href="/cranes" className="text-[11px] font-semibold text-brand hover:underline">Open register</Link>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <StatusBars
+            data={data.byStatus.map((entry) => ({
+              code: entry.code,
+              name: STATUS_MAP[entry.code].name,
+              count: entry.count,
+              type: STATUS_MAP[entry.code].type,
+            }))}
+          />
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {STATUSES.filter((status) => data.byStatus.some((entry) => entry.code === status.code)).map((status) => {
               const count = data.byStatus.find((entry) => entry.code === status.code)?.count ?? 0;
               return (

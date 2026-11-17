@@ -40,6 +40,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
         eyebrow="Governance"
         title="Approvals & actions"
         description={`Tasks assigned to ${role?.name ?? user.role}. Actions are recorded with your name and time; an approval given elsewhere does not move a crane forward.`}
+        help="Only the decisions your role can make appear here. Locked actions stay visible so you can see the workflow; an approval given outside FIRM does not move a crane."
       />
 
       {relevant.length === 0 ? (

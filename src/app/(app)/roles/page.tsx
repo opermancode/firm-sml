@@ -21,6 +21,7 @@ export default async function RolesPage() {
         eyebrow="Governance"
         title="Roles & people"
         description="The FIRM document assigns one owner per step. These are the 12 roles and the accounts seeded for evaluation."
+        help="Twelve roles from the business document, one owner per step. Global Administrators push stuck cranes but take no business calls."
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

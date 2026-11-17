@@ -18,6 +18,7 @@ export default async function CyclesPage() {
         eyebrow="FIRM cycle"
         title="Cycles"
         description="A cycle is one upload and everything that follows it. Finance closes a crane when SAP records its exit."
+        help="A cycle starts with one fleet upload. Closed cranes are excluded from the next cycle; carried-forward cranes stay in it."
         actions={<Link href="/import" className="btn btn-primary">Upload a new fleet</Link>}
       />
       {cycles.length === 0 ? (

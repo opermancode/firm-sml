@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { toast } from "sonner";
 import { craneAction, type ActionState } from "@/app/actions/firm";
 import type { Role } from "@/lib/firm/workflow";
 
@@ -45,6 +46,9 @@ export function ActionForm({
 }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(craneAction, null);
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (state?.ok) toast.success(state.ok);
+  }, [state]);
   const allowed = ALLOWED[kind]?.includes(role as Role);
 
   if (!allowed) {
@@ -106,6 +110,7 @@ export function ActionForm({
             <form action={action} className="mt-4 space-y-2">
               {fields}
               {state?.error && <p className="text-[11px] font-medium text-nd-ink">{state.error}</p>}
+              {state?.ok && <p className="text-[11px] font-medium text-healthy-ink" role="status">{state.ok}</p>}
               <div className="flex justify-end gap-2 pt-2">
                 <AlertDialog.Cancel asChild>
                   <button type="button" className="btn btn-secondary">Cancel</button>
