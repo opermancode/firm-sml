@@ -19,7 +19,7 @@ export default async function CycleDetailPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Link href="/cycles" className="mb-4 inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-brand hover:underline">
+      <Link href="/cycles" className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand hover:underline">
         <ArrowLeft size={13} /> All cycles
       </Link>
       <PageHeader
@@ -57,7 +57,7 @@ export default async function CycleDetailPage({ params }: { params: Promise<{ id
         <div className="overflow-x-auto scroll-thin">
           <table className="w-full min-w-[760px] text-left">
             <thead>
-              <tr className="border-b border-line bg-panel-2 text-[10px] font-bold uppercase tracking-[0.08em] text-faint">
+              <tr className="border-b border-line bg-panel-2 text-[12px] font-bold uppercase tracking-[0.08em] text-faint">
                 <th className="px-3 py-2.5">Equipment ID</th>
                 <th className="px-3 py-2.5">Description</th>
                 <th className="px-3 py-2.5">Status</th>
@@ -75,7 +75,7 @@ export default async function CycleDetailPage({ params }: { params: Promise<{ id
                   <td className="px-3 py-2.5 text-muted">{STATUS_MAP[crane.status].layer}</td>
                   <td className="px-3 py-2.5 text-muted">{STATUS_MAP[crane.status].type}</td>
                   <td className="px-3 py-2.5 text-right">
-                    <Link href={`/cranes/${crane.id}`} className="text-[11px] font-semibold text-brand hover:underline">Open</Link>
+                    <Link href={`/cranes/${crane.id}`} className="text-[12px] font-semibold text-brand hover:underline">Open</Link>
                   </td>
                 </tr>
               ))}

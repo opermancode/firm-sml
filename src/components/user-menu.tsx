@@ -38,14 +38,14 @@ export function UserMenu({
             className="flex items-center gap-2 rounded-lg border border-transparent px-1.5 py-1 transition hover:border-line hover:bg-panel-2"
             aria-label="Account menu"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white">
               {initials(name)}
             </span>
             <span className="hidden min-w-0 text-left sm:block">
               <span className="block max-w-[130px] truncate text-[12px] font-semibold leading-tight text-ink">
                 {name}
               </span>
-              <span className="block text-[10px] leading-tight text-faint">
+              <span className="block text-[12px] leading-tight text-faint">
                 {roleLabel(role)}
               </span>
             </span>
@@ -61,19 +61,19 @@ export function UserMenu({
           >
             <div className="px-3 py-2.5">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-[11px] font-bold text-brand-ink">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-ink">
                   {initials(name)}
                 </span>
                 <div className="min-w-0">
                   <div className="truncate text-[12.5px] font-semibold text-ink">{name}</div>
-                  <div className="truncate text-[10.5px] text-muted">{designation ?? email}</div>
+                  <div className="truncate text-[12px] text-muted">{designation ?? email}</div>
                 </div>
               </div>
               <div className="mt-2 flex items-center gap-1.5">
                 <span className="badge badge-brand">
                   <ShieldCheck size={10} /> {roleLabel(role)}
                 </span>
-                <span className="text-[10px] text-faint">12-hour session</span>
+                <span className="text-[12px] text-faint">12-hour session</span>
               </div>
             </div>
             <DropdownMenu.Separator className="my-1 h-px bg-line" />

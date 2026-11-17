@@ -9,6 +9,7 @@ import {
   type FinalCategory,
 } from "@/lib/firm/workflow";
 import { requireUser } from "@/lib/auth";
+import { DensityToggle } from "@/components/dashboard/density-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +38,12 @@ export default async function CranesPage({ searchParams }: { searchParams: Searc
         description="Every crane in the cycle with its single current status, final category and SAP execution date. Click a row for the full record."
         help="Each crane has exactly one of 20 statuses. Filters combine; the table scrolls horizontally on small screens."
         actions={
-          <Link href="/import" className="btn btn-primary">
-            <Truck size={14} /> Upload fleet
-          </Link>
+          <>
+            <DensityToggle />
+            <Link href="/import" className="btn btn-primary">
+              <Truck size={14} /> Upload fleet
+            </Link>
+          </>
         }
       />
 
@@ -76,7 +80,7 @@ export default async function CranesPage({ searchParams }: { searchParams: Searc
           <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-5">
             <button type="submit" className="btn btn-primary h-9"><Filter size={13} /> Apply filters</button>
             <Link href="/cranes" className="btn btn-ghost h-9">Clear</Link>
-            <span className="ml-auto text-[11px] text-muted">
+            <span className="ml-auto text-[12px] text-muted">
               {result.total} crane{result.total === 1 ? "" : "s"} · {result.counts.approval} awaiting approval · {result.counts.locked} locked
             </span>
           </div>
@@ -93,9 +97,9 @@ export default async function CranesPage({ searchParams }: { searchParams: Searc
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto scroll-thin">
-            <table className="w-full min-w-[1120px] text-left">
+            <table id="crane-table" className="w-full min-w-[1120px] text-left">
               <thead>
-                <tr className="border-b border-line bg-panel-2 text-[10px] font-bold uppercase tracking-[0.08em] text-faint">
+                <tr className="border-b border-line bg-panel-2 text-[12px] font-bold uppercase tracking-[0.08em] text-faint">
                   <th className="px-3 py-2.5">Equipment</th>
                   <th className="px-3 py-2.5">YOM / Age</th>
                   <th className="px-3 py-2.5">Final category</th>
@@ -115,16 +119,16 @@ export default async function CranesPage({ searchParams }: { searchParams: Searc
                         <Link href={`/cranes/${crane.id}`} className="font-semibold text-brand hover:underline">
                           {crane.equipmentId}
                         </Link>
-                        <div className="max-w-[260px] truncate text-[10.5px] text-muted">{crane.description}</div>
+                        <div className="max-w-[260px] truncate text-[12px] text-muted">{crane.description}</div>
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-muted">{crane.yom} <span className="text-faint">({crane.age}y)</span></td>
                       <td className="px-3 py-2.5">
                         {crane.finalCategory ? (
-                          <span className="text-[11.5px] font-medium text-ink">{CATEGORY_LABEL[crane.finalCategory]}</span>
+                          <span className="text-[12px] font-medium text-ink">{CATEGORY_LABEL[crane.finalCategory]}</span>
                         ) : (
-                          <span className="text-[11px] text-faint">Not finalised</span>
+                          <span className="text-[12px] text-faint">Not finalised</span>
                         )}
-                        {crane.finalOverride && <div className="text-[9.5px] text-old">Override · written reason</div>}
+                        {crane.finalOverride && <div className="text-[12px] text-old">Override · written reason</div>}
                       </td>
                       <td className="px-3 py-2.5"><StatusChip status={crane.status} /></td>
                       <td className="px-3 py-2.5">
@@ -132,14 +136,14 @@ export default async function CranesPage({ searchParams }: { searchParams: Searc
                           {crane.flags.oldFleet && <FlagChip label="Old Fleet" tone="violet" />}
                           {crane.flags.nrg && <FlagChip label="NRG" tone="orange" />}
                           {crane.flags.nonDeployable && <FlagChip label="Non-Deployable" tone="red" />}
-                          {!crane.flags.oldFleet && !crane.flags.nrg && !crane.flags.nonDeployable && <span className="text-[10.5px] text-faint">—</span>}
+                          {!crane.flags.oldFleet && !crane.flags.nrg && !crane.flags.nonDeployable && <span className="text-[12px] text-faint">—</span>}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-[10.5px] text-muted">{crane.sap.soNumber ?? "—"}</td>
-                      <td className="px-3 py-2.5 font-mono text-[10.5px] text-muted">{crane.sap.soEnd ?? "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-[12px] text-muted">{crane.sap.soNumber ?? "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-[12px] text-muted">{crane.sap.soEnd ?? "—"}</td>
                       <td className="px-3 py-2.5 text-right">
-                        <Link href={`/cranes/${crane.id}`} className="text-[11px] font-semibold text-brand hover:underline">Open</Link>
-                        <div className="text-[9.5px] text-faint">{meta.layer} · {meta.type}</div>
+                        <Link href={`/cranes/${crane.id}`} className="text-[12px] font-semibold text-brand hover:underline">Open</Link>
+                        <div className="text-[12px] text-faint">{meta.layer} · {meta.type}</div>
                       </td>
                     </tr>
                   );

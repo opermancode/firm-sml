@@ -19,7 +19,7 @@ export function PageHeader({
         {eyebrow && (
           <div className="mb-1.5 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-brand">
+            <span className="text-[12px] font-bold uppercase tracking-[0.14em] text-brand">
               {eyebrow}
             </span>
           </div>

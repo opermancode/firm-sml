@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ClipboardCheck, ShieldAlert } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { getCranes } from "@/lib/firm/api";
+import { getApprovalQueue } from "@/lib/firm/api";
 import { PageHeader } from "@/components/page-header";
 import { StatusChip } from "@/components/status-chip";
 import { EmptyState } from "@/components/empty-state";
@@ -27,11 +27,12 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
   const user = await requireUser();
   const params = await searchParams;
   const craneFilter = Array.isArray(params.crane) ? params.crane[0] : params.crane;
-  const all = await getCranes();
+  const queue = await getApprovalQueue(user.role);
   const role = ROLE_MAP[user.role as Role];
 
-  const relevant = all.rows.filter((crane) =>
-    TASKS[crane.status] && (!craneFilter || crane.id === craneFilter || crane.equipmentId === craneFilter),
+  // Same data source as the dashboard "My queue" card.
+  const relevant = queue.filter((item) =>
+    !craneFilter || item.crane.id === craneFilter || item.crane.equipmentId === craneFilter,
   );
 
   return (
@@ -52,7 +53,8 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
         />
       ) : (
         <div className="space-y-3">
-          {relevant.map((crane) => {
+          {relevant.map((item) => {
+            const crane = item.crane;
             const task = TASKS[crane.status];
             const meta = STATUS_MAP[crane.status];
             return (
@@ -67,12 +69,12 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
                       <span className="badge badge-slate">{meta.type}</span>
                     </div>
                     <p className="mt-1 text-[12px] text-muted">{crane.description}</p>
-                    <p className="mt-1.5 text-[11.5px] font-semibold text-ink">{task.title}</p>
-                    <p className="text-[11px] text-muted">{task.note}</p>
+                    <p className="mt-1.5 text-[12px] font-semibold text-ink">{task.title}</p>
+                    <p className="text-[12px] text-muted">{task.note}</p>
                   </div>
-                  <div className="text-right text-[10.5px] text-faint">
+                  <div className="text-right text-[12px] text-faint">
                     <div>Execution allowed from</div>
-                    <div className="font-mono text-[11.5px] font-semibold text-ink">{crane.sap.soEnd ?? "Immediately"}</div>
+                    <div className="font-mono text-[12px] font-semibold text-ink">{crane.sap.soEnd ?? "Immediately"}</div>
                     {crane.sap.soNumber && <div className="font-mono">SO {crane.sap.soNumber}</div>}
                   </div>
                 </div>
@@ -81,7 +83,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
                   {crane.status === "S01" && (
                     <div className="grid gap-3 lg:grid-cols-2">
                       <div>
-                        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-faint">Sales check</div>
+                        <div className="mb-2 text-[12px] font-bold uppercase tracking-[0.08em] text-faint">Sales check</div>
                         <ActionForm
                           craneId={crane.id} kind="SUBMIT_SALES" label="Submit sales check" role={user.role}
                           extra={
@@ -98,7 +100,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
                         />
                       </div>
                       <div>
-                        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-faint">Maintenance check</div>
+                        <div className="mb-2 text-[12px] font-bold uppercase tracking-[0.08em] text-faint">Maintenance check</div>
                         <ActionForm
                           craneId={crane.id} kind="SUBMIT_MAINTENANCE" label="Submit maintenance check" role={user.role}
                           extra={
@@ -174,7 +176,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
 
                 {!crane.sap.soEnd && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                    <span className="flex items-center gap-1.5 text-[11px] text-muted">
+                    <span className="flex items-center gap-1.5 text-[12px] text-muted">
                       <ShieldAlert size={12} className="text-nrg-ink" /> No SAP SO end date entered for this crane.
                     </span>
                     <ActionForm

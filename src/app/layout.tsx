@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "FIRM — Fleet Classification",
+  title: "FIRM — Fleet Exit Cycle",
   description:
-    "Old Fleet, Non-Deployable and NRG classification for the Sanghvi Movers crane fleet.",
+    "Confidential operations console for the Sanghvi Movers Limited crane exit cycle.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

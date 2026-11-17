@@ -26,7 +26,7 @@ export function RoleGate({
   if (mode === "hide") {
     return (
       <Hint label={reason}>
-        <span className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-[11px] font-medium text-faint">
+        <span className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-[12px] font-medium text-faint">
           <Lock size={11} /> Restricted
         </span>
       </Hint>
@@ -37,7 +37,7 @@ export function RoleGate({
     <Hint label={reason}>
       <span
         aria-disabled
-        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-[11px] font-medium text-faint opacity-80"
+        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-[12px] font-medium text-faint opacity-80"
       >
         <Lock size={11} /> {children}
       </span>

@@ -112,13 +112,16 @@ export async function getDashboard(): Promise<DashboardData> {
 /** Approvals currently waiting on a given role. */
 export async function getApprovalQueue(role: string): Promise<ApprovalItem[]> {
   const state = await getState();
+  const admin = "GLOBAL_ADMIN";
   const roleMap: Partial<Record<string, { roles: string[]; decision: string; note: string }>> = {
-    S02: { roles: ["FINANCE"], decision: "Finalise FIRM list after deduplication", note: "Finance Head sign-off required" },
-    S06: { roles: ["STRATEGY", "CSO"], decision: "Award crane to international BU", note: "Strategy Head; CSO if yield is below expected" },
-    S10: { roles: ["CBO", "MD", "CEO" as string], decision: "Approve sale", note: "FP&A has validated the price" },
-    S11: { roles: ["MD", "CBO"], decision: "Approve scrap sale", note: "No acceptable buyer in the sale window" },
-    S13: { roles: ["CBO", "CSO", "SALES", "STRATEGY"], decision: "Approve claim-back", note: "Real opportunity details required" },
-    S14: { roles: ["CBO", "CSO", "STRATEGY", "MD"], decision: "Resolve conflict", note: "Decision due within 3 working days" },
+    S01: { roles: ["SALES", "MAINTENANCE", admin], decision: "Submit parallel check", note: "Sales and Maintenance review the full fleet side by side" },
+    S02: { roles: ["FINANCE", admin], decision: "Finalise FIRM list after deduplication", note: "Finance Head sign-off required" },
+    S06: { roles: ["STRATEGY", "CSO", admin], decision: "Award crane to international BU", note: "Strategy Head; CSO if yield is below expected" },
+    S07: { roles: ["STRATEGY", admin], decision: "Record international transfer", note: "Deployment waits for the current SO to end" },
+    S10: { roles: ["CBO", "MD", admin], decision: "Approve sale", note: "FP&A has validated the price" },
+    S11: { roles: ["MD", "CBO", admin], decision: "Approve scrap sale", note: "No acceptable buyer in the sale window" },
+    S13: { roles: ["CBO", "CSO", "SALES", "STRATEGY", admin], decision: "Approve claim-back", note: "Real opportunity details required" },
+    S14: { roles: ["CBO", "CSO", "STRATEGY", "MD", admin], decision: "Resolve conflict", note: "Decision due within 3 working days" },
   };
   return state.cranes
     .map((crane) => {

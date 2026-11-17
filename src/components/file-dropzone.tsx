@@ -69,7 +69,7 @@ export function FileDropzone({
           <>
             <FileSpreadsheet size={24} className="text-healthy" />
             <div className="mt-2 text-[12.5px] font-semibold text-ink">{file.name}</div>
-            <div className="mt-0.5 text-[11px] text-muted">
+            <div className="mt-0.5 text-[12px] text-muted">
               {(file.size / 1024).toFixed(0)} KB · click to choose a different file
             </div>
             <button
@@ -90,13 +90,13 @@ export function FileDropzone({
             <div className="mt-2 text-[12.5px] font-semibold text-ink">
               Drop the workbook here, or click to browse
             </div>
-            <div className="mt-0.5 text-[11px] text-muted">
+            <div className="mt-0.5 text-[12px] text-muted">
               Excel .xlsx up to {maxMb} MB. Nothing is saved until you commit the preview.
             </div>
           </>
         )}
       </div>
-      {localError && <p className="mt-1.5 text-[11px] font-medium text-nd-ink">{localError}</p>}
+      {localError && <p className="mt-1.5 text-[12px] font-medium text-nd-ink">{localError}</p>}
     </div>
   );
 }

@@ -39,11 +39,11 @@ export default async function RolesPage() {
               <div className="mt-3 flex items-center gap-2 rounded-lg border border-line bg-panel-2 px-2.5 py-2">
                 <UsersRound size={14} className="text-brand" />
                 {account ? (
-                  <span className="text-[11.5px] text-muted">
+                  <span className="text-[12px] text-muted">
                     <strong className="text-ink">{account.name}</strong> · {account.email}
                   </span>
                 ) : (
-                  <span className="text-[11.5px] text-faint">No account seeded</span>
+                  <span className="text-[12px] text-faint">No account seeded</span>
                 )}
               </div>
             </section>

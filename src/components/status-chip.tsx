@@ -1,3 +1,6 @@
+import {
+  Archive, CheckCircle2, CircleAlert, CircleDashed, Clock3, LockKeyhole,
+} from "lucide-react";
 import { STATUS_MAP, type StatusCode } from "@/lib/firm/workflow";
 
 const TONE_CLASS: Record<string, string> = {
@@ -10,7 +13,15 @@ const TONE_CLASS: Record<string, string> = {
   green: "badge-healthy",
 };
 
-/** S01–S20 status label. Always shows the code and the full name. */
+const TYPE_ICON = {
+  Active: CircleDashed,
+  Approval: Clock3,
+  "On Hold": CircleAlert,
+  Locked: LockKeyhole,
+  Closed: Archive,
+} as const;
+
+/** S01–S20 status label: code, full name and an icon, never colour alone. */
 export function StatusChip({
   status,
   compact = false,
@@ -21,14 +32,14 @@ export function StatusChip({
   showCode?: boolean;
 }) {
   const meta = STATUS_MAP[status];
+  const Icon = TYPE_ICON[meta.type] ?? CheckCircle2;
   return (
     <span
       className={`badge ${TONE_CLASS[meta.tone]}`}
-      title={`${meta.name} · ${meta.layer} · ${meta.type} · ${meta.impact}`}
+      title={`${meta.code} ${meta.name} · ${meta.layer} · ${meta.type} · ${meta.impact}`}
     >
-      {showCode && (
-        <span className="font-mono text-[9.5px] font-bold opacity-70">{meta.code}</span>
-      )}
+      <Icon size={11} aria-hidden />
+      {showCode && <span className="font-mono text-[12px] font-bold">{meta.code}</span>}
       <span className={compact ? "max-w-[150px] truncate" : ""}>{meta.name}</span>
     </span>
   );

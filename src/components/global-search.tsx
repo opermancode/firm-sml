@@ -52,7 +52,7 @@ export function GlobalSearch() {
         onChange={(event) => setValue(event.target.value)}
         onFocus={() => setOpen(true)}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-        className="input h-9 pl-9 pr-14 text-[12.5px]"
+        className="input h-9 pl-9 pr-[76px] text-[13px]"
         placeholder="Search asset code, model or location…"
         aria-label="Search the fleet register"
       />
@@ -66,8 +66,9 @@ export function GlobalSearch() {
           <X size={13} />
         </button>
       ) : (
-        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
-          <span className="kbd">/</span>
+        <span className="pointer-events-none absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+          <span className="kbd" title="Press / to focus search">/</span>
+          <span className="kbd" title="Open the command bar">⌘K</span>
         </span>
       )}
 

@@ -42,7 +42,7 @@ export function ImportWizard({ role }: { role: string }) {
         </div>
 
         {!canUpload && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg border border-line bg-panel-2 px-3 py-2 text-[11.5px] text-muted">
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-line bg-panel-2 px-3 py-2 text-[12px] text-muted">
             <CircleAlert size={13} className="text-nrg-ink" />
             Your role cannot upload a fleet. The step is shown so you can see the workflow; only FP&A can commit.
           </div>
@@ -61,7 +61,7 @@ export function ImportWizard({ role }: { role: string }) {
           <p className="mt-2 text-[12.5px] font-semibold text-ink">
             {file ? file.name : "Drop the fleet workbook here"}
           </p>
-          <p className="mt-1 text-[11px] text-muted">.xlsx · Fleet sheet · maximum 500 rows</p>
+          <p className="mt-1 text-[12px] text-muted">.xlsx · Fleet sheet · maximum 500 rows</p>
           <input
             ref={fileRef}
             type="file"
@@ -98,7 +98,7 @@ export function ImportWizard({ role }: { role: string }) {
             {committing ? "Committing…" : "Commit to cycle"}
           </button>
         </div>
-        {validation?.error && <p className="mt-2 text-[11.5px] font-medium text-nd-ink">{validation.error}</p>}
+        {validation?.error && <p className="mt-2 text-[12px] font-medium text-nd-ink">{validation.error}</p>}
       </div>
 
       <div className="card p-4">
@@ -111,7 +111,7 @@ export function ImportWizard({ role }: { role: string }) {
             <span key={header} className={`badge ${index < 5 ? "badge-brand" : "badge-slate"}`}>{header}</span>
           ))}
         </div>
-        <p className="mt-3 text-[11px] leading-relaxed text-muted">
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">
           SO End Date becomes <strong className="text-ink">Execution allowed from</strong>. A crane on rent stays in the cycle and can be quoted or claimed, but a new SO, deployment or handover waits for the current SO to end.
         </p>
       </div>
@@ -131,7 +131,7 @@ export function ImportWizard({ role }: { role: string }) {
               <div className="border-b border-line px-4 py-3"><h3 className="panel-title">Validation issues</h3></div>
               <div className="divide-y divide-line">
                 {validation.preview.issues.map((issue, index) => (
-                  <div key={`${issue.row}-${index}`} className="flex items-start gap-2 px-4 py-2.5 text-[11.5px]">
+                  <div key={`${issue.row}-${index}`} className="flex items-start gap-2 px-4 py-2.5 text-[12px]">
                     {issue.severity === "error"
                       ? <CircleAlert size={13} className="mt-0.5 shrink-0 text-nd" />
                       : <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-nrg-review" />}
@@ -150,7 +150,7 @@ export function ImportWizard({ role }: { role: string }) {
               <div className="overflow-x-auto scroll-thin">
                 <table className="w-full min-w-[820px] text-left">
                   <thead>
-                    <tr className="border-b border-line bg-panel-2 text-[10px] font-bold uppercase tracking-[0.08em] text-faint">
+                    <tr className="border-b border-line bg-panel-2 text-[12px] font-bold uppercase tracking-[0.08em] text-faint">
                       <th className="px-3 py-2">Equipment ID</th><th className="px-3 py-2">Description</th>
                       <th className="px-3 py-2">YOM</th><th className="px-3 py-2">Age</th>
                       <th className="px-3 py-2">Yield %</th><th className="px-3 py-2">Utilisation %</th>
@@ -159,7 +159,7 @@ export function ImportWizard({ role }: { role: string }) {
                   </thead>
                   <tbody className="divide-y divide-line">
                     {validation.preview.rows.map((row) => (
-                      <tr key={row.equipmentId} className="text-[11.5px]">
+                      <tr key={row.equipmentId} className="text-[12px]">
                         <td className="px-3 py-2 font-semibold text-ink">{row.equipmentId}</td>
                         <td className="px-3 py-2 text-muted">{row.description}</td>
                         <td className="px-3 py-2 tabular-nums">{row.yom}</td>
@@ -167,7 +167,7 @@ export function ImportWizard({ role }: { role: string }) {
                         <td className="px-3 py-2 tabular-nums">{row.yieldPct}</td>
                         <td className="px-3 py-2 tabular-nums">{row.utilisationPct}</td>
                         <td className="px-3 py-2">{row.oldFleet ? <span className="badge badge-old">Yes</span> : <span className="badge badge-slate">No</span>}</td>
-                        <td className="px-3 py-2 font-mono text-[10.5px] text-muted">{row.soNumber ?? "—"}{row.soEnd ? ` · ${row.soEnd}` : ""}</td>
+                        <td className="px-3 py-2 font-mono text-[12px] text-muted">{row.soNumber ?? "—"}{row.soEnd ? ` · ${row.soEnd}` : ""}</td>
                       </tr>
                     ))}
                   </tbody>

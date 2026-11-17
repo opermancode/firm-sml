@@ -51,20 +51,20 @@ export default async function LoginPage() {
               <item.icon size={16} className="mt-0.5 shrink-0 text-brand" />
               <div>
                 <div className="text-[12px] font-semibold text-ink">{item.title}</div>
-                <div className="text-[10.5px] leading-relaxed text-muted">{item.text}</div>
+                <div className="text-[12px] leading-relaxed text-muted">{item.text}</div>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="relative text-[10px] text-faint">
+        <p className="relative text-[12px] text-faint">
           Confidential. Sanghvi Movers Limited. Internal use only.
         </p>
       </aside>
 
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
         <LoginForm />
-        <div className="relative mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-faint">
+        <div className="relative mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] text-faint">
           <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> Active</span>
           <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-nrg-review" /> Approval</span>
           <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-nd" /> Conflict</span>

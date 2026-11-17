@@ -40,8 +40,8 @@ function Section({
 function Row({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-line py-2 last:border-0">
-      <span className="text-[11px] text-muted">{label}</span>
-      <span className={`text-right text-[11.5px] font-medium text-ink ${mono ? "font-mono" : ""}`}>{value ?? "—"}</span>
+      <span className="text-[12px] text-muted">{label}</span>
+      <span className={`text-right text-[12px] font-medium text-ink ${mono ? "font-mono" : ""}`}>{value ?? "—"}</span>
     </div>
   );
 }
@@ -56,7 +56,7 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Link href="/cranes" className="mb-4 inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-brand hover:underline">
+      <Link href="/cranes" className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand hover:underline">
         <ArrowLeft size={13} /> Back to crane register
       </Link>
 
@@ -106,10 +106,10 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
               } />
             </div>
             {crane.finalOverride && (
-              <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--old)_30%,transparent)] bg-old-soft px-3 py-2.5 text-[11.5px] text-old-ink">
+              <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--old)_30%,transparent)] bg-old-soft px-3 py-2.5 text-[12px] text-old-ink">
                 <strong>Finance override:</strong> {CATEGORY_LABEL[crane.finalOverride.category]} — “{crane.finalOverride.reason}”
-                <div className="mt-0.5 text-[10px] opacity-80">Recorded by {crane.finalOverride.by} on {crane.finalOverride.at}</div>
-                <div className="mt-1 text-[10px] opacity-80">Original flags remain visible above.</div>
+                <div className="mt-0.5 text-[12px] opacity-80">Recorded by {crane.finalOverride.by} on {crane.finalOverride.at}</div>
+                <div className="mt-1 text-[12px] opacity-80">Original flags remain visible above.</div>
               </div>
             )}
           </Section>
@@ -137,7 +137,7 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
             <Section title="International rental" icon={<Plane size={15} className="text-brand" />}>
               <div className="space-y-2">
                 {crane.buQuotes.map((quote, index) => (
-                  <div key={`${quote.bu}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-panel-2 px-3 py-2 text-[11.5px]">
+                  <div key={`${quote.bu}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-panel-2 px-3 py-2 text-[12px]">
                     <span className="font-semibold text-ink">{quote.bu}</span>
                     <span className={quote.interested ? "badge badge-healthy" : "badge badge-slate"}>
                       {quote.interested ? "Interested" : "Not interested"}
@@ -145,14 +145,14 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
                     <span className="text-muted">
                       {quote.ratePerMonth ? `₹${quote.ratePerMonth.toLocaleString("en-IN")}/mo` : "—"} · {quote.durationMonths ?? "—"} mo · yield {quote.expectedYieldPct ?? "—"}%
                     </span>
-                    <span className="text-[10.5px] text-faint">{quote.customer ?? "—"} · {quote.country ?? "—"}</span>
+                    <span className="text-[12px] text-faint">{quote.customer ?? "—"} · {quote.country ?? "—"}</span>
                   </div>
                 ))}
               </div>
               {crane.award && (
-                <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--old)_30%,transparent)] bg-old-soft px-3 py-2.5 text-[11.5px] text-old-ink">
+                <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--old)_30%,transparent)] bg-old-soft px-3 py-2.5 text-[12px] text-old-ink">
                   <strong>Awarded to {crane.award.bu}</strong> — {crane.award.reason}
-                  <div className="mt-1 text-[10px] opacity-80">
+                  <div className="mt-1 text-[12px] opacity-80">
                     {crane.award.decidedBy} · {crane.award.decidedAt}
                     {crane.award.approvedBy ? ` · approved by ${crane.award.approvedBy}` : " · approval pending"}
                   </div>
@@ -170,7 +170,7 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
               </Section>
               <Section title="Sale quotations" icon={<ReceiptText size={15} className="text-brand" />}>
                 {crane.saleQuotes.length === 0 ? (
-                  <p className="text-[11.5px] text-muted">No quotations yet.</p>
+                  <p className="text-[12px] text-muted">No quotations yet.</p>
                 ) : crane.saleQuotes.map((quote, index) => (
                   <Row
                     key={`${quote.buyer}-${index}`}
@@ -185,7 +185,7 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
           {(crane.claimBack || crane.conflict) && (
             <Section title="Claim-back & conflict" icon={<RotateCcw size={15} className="text-brand" />}>
               {crane.claimBack && (
-                <div className="rounded-lg border border-line bg-panel-2 p-3 text-[11.5px]">
+                <div className="rounded-lg border border-line bg-panel-2 p-3 text-[12px]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-ink">Claim-back by {crane.claimBack.team}</span>
                     <span className={`badge ${crane.claimBack.status === "APPROVED" ? "badge-healthy" : crane.claimBack.status === "REJECTED" ? "badge-red" : "badge-amber"}`}>
@@ -195,15 +195,15 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
                   <div className="mt-1.5 text-muted">
                     {crane.claimBack.customer} · ₹{crane.claimBack.rate.toLocaleString("en-IN")}/mo · {crane.claimBack.durationMonths} months · SO expected {crane.claimBack.expectedSoDate}
                   </div>
-                  <div className="mt-1 text-[10.5px] text-faint">“{crane.claimBack.reason}” · {crane.claimBack.createdBy}</div>
+                  <div className="mt-1 text-[12px] text-faint">“{crane.claimBack.reason}” · {crane.claimBack.createdBy}</div>
                 </div>
               )}
               {crane.conflict && (
-                <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--nd)_28%,transparent)] bg-nd-soft p-3 text-[11.5px] text-nd-ink">
+                <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--nd)_28%,transparent)] bg-nd-soft p-3 text-[12px] text-nd-ink">
                   <div className="font-semibold">{crane.conflict.title}</div>
                   <div className="mt-1">Decided by {crane.conflict.decidedBy} · status {crane.conflict.status}</div>
                   {crane.conflict.winner && <div className="mt-1">Outcome: {crane.conflict.winner}</div>}
-                  {crane.conflict.reason && <div className="mt-1 text-[10.5px] opacity-80">“{crane.conflict.reason}”</div>}
+                  {crane.conflict.reason && <div className="mt-1 text-[12px] opacity-80">“{crane.conflict.reason}”</div>}
                 </div>
               )}
             </Section>
@@ -218,11 +218,11 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
             <Row label="SO end" value={crane.sap.soEnd} mono />
             <Row label="Asset transfer no." value={crane.sap.assetTransferNo} mono />
             <div className="mt-3 rounded-lg border border-line bg-panel-2 px-3 py-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-faint">
+              <div className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.1em] text-faint">
                 <CalendarClock size={12} /> Execution allowed from
               </div>
               <div className="mt-1 font-mono text-[13px] font-semibold text-ink">{crane.sap.soEnd ?? "Immediately"}</div>
-              <p className="mt-1 text-[10.5px] leading-relaxed text-muted">
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
                 No new SO, deployment or handover before this date. The crane stays in the cycle and can still be quoted or claimed.
               </p>
             </div>
@@ -230,16 +230,16 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
 
           <Section title="Approvals & audit" icon={<ShieldCheck size={15} className="text-brand" />}>
             {crane.approvals.length === 0 && crane.audit.length === 0 ? (
-              <p className="text-[11.5px] text-muted">No approval or audit entries yet.</p>
+              <p className="text-[12px] text-muted">No approval or audit entries yet.</p>
             ) : (
               <ol className="space-y-3">
                 {crane.audit.slice().reverse().map((entry) => (
                   <li key={entry.id} className="flex gap-2.5 border-l border-line pl-3">
                     <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${entry.action.toLowerCase().includes("lock") || entry.action.toLowerCase().includes("complete") ? "bg-healthy" : "bg-brand"}`} />
                     <div className="min-w-0">
-                      <div className="text-[11.5px] font-semibold text-ink">{entry.action}</div>
-                      <div className="text-[10.5px] text-muted">{entry.detail}</div>
-                      <div className="text-[9.5px] text-faint">
+                      <div className="text-[12px] font-semibold text-ink">{entry.action}</div>
+                      <div className="text-[12px] text-muted">{entry.detail}</div>
+                      <div className="text-[12px] text-faint">
                         {entry.actor}{role ? ` · ${role.short}` : ""} · {entry.at}
                       </div>
                     </div>
@@ -249,15 +249,15 @@ export default async function CraneDetailPage({ params }: { params: Promise<{ id
             )}
             {crane.approvals.length > 0 && (
               <div className="mt-3 border-t border-line pt-3">
-                <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] text-faint">Approvals</div>
+                <div className="mb-2 text-[12px] font-bold uppercase tracking-[0.1em] text-faint">Approvals</div>
                 {crane.approvals.map((entry) => (
-                  <div key={entry.id} className="mb-2 rounded-lg border border-line bg-panel-2 px-2.5 py-2 text-[11px]">
+                  <div key={entry.id} className="mb-2 rounded-lg border border-line bg-panel-2 px-2.5 py-2 text-[12px]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-ink">{entry.decision}</span>
                       <span className={entry.action === "APPROVED" ? "badge badge-healthy" : "badge badge-red"}>{entry.action}</span>
                     </div>
-                    <div className="mt-0.5 text-[10.5px] text-muted">{entry.approverName} · {entry.approverRole} · {entry.at}</div>
-                    {entry.comment && <div className="mt-1 text-[10.5px] italic text-faint">“{entry.comment}”</div>}
+                    <div className="mt-0.5 text-[12px] text-muted">{entry.approverName} · {entry.approverRole} · {entry.at}</div>
+                    {entry.comment && <div className="mt-1 text-[12px] italic text-faint">“{entry.comment}”</div>}
                   </div>
                 ))}
               </div>

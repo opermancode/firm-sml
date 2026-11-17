@@ -13,136 +13,159 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* -------------------------------------------------------------------------
+   OKLCH design tokens. Both themes use the same perceptual lightness steps so
+   semantic colours keep the same meaning and contrast in light and dark.
+   One brand accent: electric indigo. Everything else is a neutral slate scale.
+   ------------------------------------------------------------------------- */
+
 :root {
   color-scheme: light;
 
-  --canvas: #f4f6f9;
-  --canvas-2: #eef1f6;
-  --panel: #ffffff;
-  --panel-2: #f8fafc;
-  --panel-3: #f1f4f8;
+  --canvas: oklch(0.972 0.006 260);
+  --canvas-2: oklch(0.953 0.008 260);
+  --panel: oklch(1 0 0);
+  --panel-2: oklch(0.984 0.005 260);
+  --panel-3: oklch(0.963 0.008 260);
 
-  --ink: #101828;
-  --muted: #55617a;
-  --faint: #8792a6;
+  --ink: oklch(0.23 0.028 265);
+  --muted: oklch(0.47 0.034 265);
+  --faint: oklch(0.56 0.028 260);
 
-  --line: #e3e8f0;
-  --line-strong: #cfd7e3;
+  --line: oklch(0.918 0.008 260);
+  --line-strong: oklch(0.857 0.014 260);
 
-  --brand: #1d4ed8;
-  --brand-strong: #1e40af;
-  --brand-soft: #edf3ff;
-  --brand-ink: #1e3a8a;
-  --brand-ring: rgba(29, 78, 216, 0.28);
+  /* Brand */
+  --brand: oklch(0.53 0.21 276);
+  --brand-strong: oklch(0.46 0.19 276);
+  --brand-soft: oklch(0.962 0.018 276);
+  --brand-ink: oklch(0.43 0.15 276);
+  --brand-ring: oklch(0.53 0.21 276 / 0.28);
 
-  --danger: #dc2626;
-  --danger-strong: #b91c1c;
-  --danger-soft: #fef2f2;
+  /* Semantic: waiting */
+  --warning: oklch(0.66 0.15 70);
+  --warning-strong: oklch(0.57 0.14 70);
+  --warning-soft: oklch(0.976 0.024 85);
+  --warning-ink: oklch(0.50 0.13 70);
 
-  --nd: #dc2626;
-  --nd-soft: #fef2f2;
-  --nd-ink: #b91c1c;
+  /* Semantic: conflict / blocked */
+  --danger: oklch(0.62 0.22 25);
+  --danger-strong: oklch(0.54 0.21 25);
+  --danger-soft: oklch(0.971 0.016 20);
+  --nd: var(--danger);
+  --nd-soft: var(--danger-soft);
+  --nd-ink: var(--danger-strong);
 
-  --nrg: #ea580c;
-  --nrg-soft: #fff5ed;
-  --nrg-ink: #9a3412;
+  /* Semantic: neutral in-progress */
+  --nrg: oklch(0.58 0.09 255);
+  --nrg-soft: oklch(0.965 0.014 255);
+  --nrg-ink: oklch(0.47 0.09 255);
+  --info: var(--nrg);
+  --info-soft: var(--nrg-soft);
+  --info-ink: var(--nrg-ink);
 
-  --nrg-review: #d97706;
-  --nrg-review-soft: #fffaeb;
-  --nrg-review-ink: #92400e;
+  /* Semantic: SAP locked */
+  --old: oklch(0.56 0.21 295);
+  --old-soft: oklch(0.968 0.022 295);
+  --old-ink: oklch(0.47 0.17 295);
 
-  --old: #7c3aed;
-  --old-soft: #f5f1ff;
-  --old-ink: #5b21b6;
+  /* Semantic: completed */
+  --healthy: oklch(0.65 0.16 152);
+  --healthy-soft: oklch(0.968 0.022 152);
+  --healthy-ink: oklch(0.52 0.13 152);
+  --pass: var(--healthy);
+  --pass-soft: var(--healthy-soft);
+  --pass-ink: var(--healthy-ink);
 
-  --healthy: #16a34a;
-  --healthy-soft: #f0fdf4;
-  --healthy-ink: #166534;
+  /* Legacy aliases kept so existing component names keep working */
+  --nrg-review: var(--warning);
+  --nrg-review-soft: var(--warning-soft);
+  --nrg-review-ink: var(--warning-ink);
 
-  --info: #2563eb;
-  --info-soft: #eff6ff;
-  --info-ink: #1e40af;
+  /* Shape, spacing and motion */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-card: 8px;
+  --radius-chip: 6px;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
 
-  --warning: #d97706;
-  --warning-soft: #fffbeb;
-  --warning-ink: #92400e;
+  --shadow-sm: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 1px 2px oklch(0.23 0.03 265 / 0.05);
+  --shadow-md: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 8px 24px -18px oklch(0.23 0.03 265 / 0.35);
+  --shadow-lg: 0 1px 0 oklch(1 0 0 / 0.06) inset, 0 24px 60px -28px oklch(0.23 0.03 265 / 0.42);
 
-  --pass: #16a34a;
-  --pass-soft: #f0fdf4;
-  --pass-ink: #166534;
-
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
-  --shadow-md: 0 1px 3px rgba(16, 24, 40, 0.08), 0 8px 24px -18px rgba(16, 24, 40, 0.35);
-  --shadow-lg: 0 24px 60px -28px rgba(16, 24, 40, 0.4);
-
-  --chart-grid: #e8edf4;
-  --chart-axis: #8792a6;
+  --chart-grid: oklch(0.93 0.008 260);
+  --chart-axis: oklch(0.56 0.028 260);
 }
 
 .dark {
   color-scheme: dark;
 
-  --canvas: #090c12;
-  --canvas-2: #0d1118;
-  --panel: #11161f;
-  --panel-2: #151b25;
-  --panel-3: #1a212d;
+  --canvas: oklch(0.165 0.016 265);
+  --canvas-2: oklch(0.195 0.017 265);
+  --panel: oklch(0.215 0.018 265);
+  --panel-2: oklch(0.245 0.019 265);
+  --panel-3: oklch(0.275 0.02 265);
 
-  --ink: #e9eef6;
-  --muted: #9aa5b7;
-  --faint: #6e798c;
+  --ink: oklch(0.96 0.008 265);
+  --muted: oklch(0.79 0.02 265);
+  --faint: oklch(0.68 0.022 265);
 
-  --line: #232b39;
-  --line-strong: #313b4c;
+  --line: oklch(0.31 0.018 265);
+  --line-strong: oklch(0.38 0.02 265);
 
-  --brand: #6d9bff;
-  --brand-strong: #8fb3ff;
-  --brand-soft: #14213a;
-  --brand-ink: #bcd2ff;
-  --brand-ring: rgba(109, 155, 255, 0.35);
+  --brand: oklch(0.73 0.16 276);
+  --brand-strong: oklch(0.80 0.13 276);
+  --brand-soft: oklch(0.27 0.065 276);
+  --brand-ink: oklch(0.86 0.10 276);
+  --brand-ring: oklch(0.73 0.16 276 / 0.35);
 
-  --danger: #f87171;
-  --danger-strong: #fca5a5;
-  --danger-soft: #2a1417;
+  --warning: oklch(0.79 0.14 78);
+  --warning-strong: oklch(0.85 0.12 78);
+  --warning-soft: oklch(0.28 0.055 78);
+  --warning-ink: oklch(0.87 0.11 78);
 
-  --nd: #f87171;
-  --nd-soft: #2a1417;
-  --nd-ink: #fca5a5;
+  --danger: oklch(0.70 0.19 25);
+  --danger-strong: oklch(0.79 0.15 25);
+  --danger-ring: oklch(0.70 0.19 25 / 0.3);
+  --danger-soft: oklch(0.27 0.065 25);
+  --nd: var(--danger);
+  --nd-soft: var(--danger-soft);
+  --nd-ink: var(--danger-strong);
 
-  --nrg: #fb923c;
-  --nrg-soft: #2b1a0e;
-  --nrg-ink: #fdba74;
+  --nrg: oklch(0.75 0.09 255);
+  --nrg-soft: oklch(0.27 0.04 255);
+  --nrg-ink: oklch(0.84 0.08 255);
+  --info: var(--nrg);
+  --info-soft: var(--nrg-soft);
+  --info-ink: var(--nrg-ink);
 
-  --nrg-review: #fbbf24;
-  --nrg-review-soft: #2a2210;
-  --nrg-review-ink: #fde68a;
+  --old: oklch(0.75 0.15 295);
+  --old-soft: oklch(0.27 0.06 295);
+  --old-ink: oklch(0.85 0.11 295);
 
-  --old: #a78bfa;
-  --old-soft: #211a35;
-  --old-ink: #c4b5fd;
+  --healthy: oklch(0.78 0.15 152);
+  --healthy-soft: oklch(0.26 0.055 152);
+  --healthy-ink: oklch(0.86 0.11 152);
+  --pass: var(--healthy);
+  --pass-soft: var(--healthy-soft);
+  --pass-ink: var(--healthy-ink);
 
-  --healthy: #4ade80;
-  --healthy-soft: #10241a;
-  --healthy-ink: #86efac;
+  --nrg-review: var(--warning);
+  --nrg-review-soft: var(--warning-soft);
+  --nrg-review-ink: var(--warning-ink);
 
-  --info: #60a5fa;
-  --info-soft: #12203a;
-  --info-ink: #bfdbfe;
+  --shadow-sm: 0 1px 0 oklch(1 0 0 / 0.035) inset, 0 1px 2px oklch(0 0 0 / 0.5);
+  --shadow-md: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 12px 30px -20px oklch(0 0 0 / 0.9);
+  --shadow-lg: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 28px 70px -30px oklch(0 0 0 / 0.92);
 
-  --warning: #fbbf24;
-  --warning-soft: #2a2210;
-  --warning-ink: #fde68a;
-
-  --pass: #4ade80;
-  --pass-soft: #10241a;
-  --pass-ink: #86efac;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.55), 0 12px 30px -20px rgba(0, 0, 0, 0.9);
-  --shadow-lg: 0 28px 70px -30px rgba(0, 0, 0, 0.9);
-
-  --chart-grid: #1e2632;
-  --chart-axis: #6e798c;
+  --chart-grid: oklch(0.28 0.018 265);
+  --chart-axis: oklch(0.64 0.022 265);
 }
 
 @theme inline {
@@ -150,8 +173,7 @@
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Space Grotesk Variable", "Inter Variable", ui-sans-serif,
     system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-canvas: var(--canvas);
   --color-canvas-2: var(--canvas-2);
@@ -268,7 +290,7 @@ hr {
   position: relative;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
 }
 
@@ -285,7 +307,7 @@ hr {
 }
 
 .panel-subtitle {
-  font-size: 11.5px;
+  font-size: 13px;
   line-height: 1.55;
   color: var(--muted);
 }
@@ -307,7 +329,7 @@ hr {
   gap: 7px;
   height: 36px;
   padding: 0 13px;
-  border-radius: 9px;
+  border-radius: var(--radius-chip);
   font-size: 12.5px;
   font-weight: 600;
   border: 1px solid transparent;
@@ -373,7 +395,7 @@ hr {
 .btn-sm {
   height: 30px;
   padding: 0 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   border-radius: 7px;
 }
 
@@ -390,7 +412,7 @@ hr {
   width: 100%;
   height: 36px;
   border: 1px solid var(--line-strong);
-  border-radius: 9px;
+  border-radius: var(--radius-chip);
   padding: 0 11px;
   font-size: 13px;
   background: var(--panel);
@@ -439,7 +461,7 @@ hr {
 
 .label {
   display: block;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--muted);
   margin-bottom: 5px;
@@ -449,7 +471,7 @@ hr {
 
 .field-hint {
   margin-top: 5px;
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--faint);
 }
@@ -461,8 +483,8 @@ hr {
   align-items: center;
   gap: 5px;
   padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10.5px;
+  border-radius: var(--radius-chip);
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.6;
   border: 1px solid transparent;
@@ -553,7 +575,7 @@ table.data thead th {
   top: 0;
   z-index: 1;
   text-align: left;
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--faint);
@@ -606,10 +628,10 @@ table.data tbody tr:last-child td {
   padding: 8px 10px;
   border-radius: 8px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 500;
   transition:
-    background 0.15s ease,
+    background var(--dur-fast) var(--ease-out),
     color 0.15s ease;
 }
 
@@ -642,9 +664,9 @@ table.data tbody tr:last-child td {
 .sidebar-group {
   padding: 0 10px;
   margin-bottom: 5px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -679,8 +701,8 @@ table.data tbody tr:last-child td {
 }
 
 .stat-label {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--muted);
@@ -704,9 +726,9 @@ table.data tbody tr:last-child td {
   border-radius: 5px;
   border: 1px solid var(--line-strong);
   background: var(--panel-2);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--faint);
+  color: var(--muted);
   font-family: var(--font-mono);
 }
 
@@ -759,8 +781,11 @@ table.data tbody tr:last-child td {
 /* subtle page background texture in light mode */
 
 .app-canvas {
+  position: relative;
   background:
-    radial-gradient(900px 420px at 100% -10%, color-mix(in srgb, var(--brand) 7%, transparent), transparent 70%),
+    linear-gradient(to right, oklch(0.5 0.02 265 / 0.045) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(to bottom, oklch(0.5 0.02 265 / 0.045) 1px, transparent 1px) 0 0 / 48px 48px,
+    radial-gradient(900px 420px at 100% -10%, color-mix(in srgb, var(--brand) 6%, transparent), transparent 70%),
     var(--canvas);
 }
 
@@ -771,7 +796,24 @@ table.data tbody tr:last-child td {
 }
 }
 
+/* register density */
+[data-register-density="compact"] #crane-table td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
 /* print */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 @media print {
   .no-print {

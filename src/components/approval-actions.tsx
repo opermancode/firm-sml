@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { toast } from "sonner";
 import { craneAction, type ActionState } from "@/app/actions/firm";
+import { LockedActionChip } from "@/components/dashboard/locked-action-chip";
 import type { Role } from "@/lib/firm/workflow";
 
 const ALLOWED: Record<string, Role[]> = {
@@ -52,14 +53,7 @@ export function ActionForm({
   const allowed = ALLOWED[kind]?.includes(role as Role);
 
   if (!allowed) {
-    return (
-      <span
-        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-line bg-panel-2 px-2.5 py-1.5 text-[11px] font-medium text-faint"
-        title={`Your role (${role}) cannot perform this action. It is shown so you can see the workflow.`}
-      >
-        {label} <span aria-hidden>🔒</span>
-      </span>
-    );
+    return <LockedActionChip label={label} role={(ALLOWED[kind] ?? []).join(" or ")} />;
   }
 
   const fields = (
@@ -86,8 +80,8 @@ export function ActionForm({
         <button type="submit" className={`btn btn-${tone} h-9`} disabled={pending}>
           {pending ? "Saving…" : label}
         </button>
-        {state?.error && <span className="w-full text-[11px] font-medium text-nd-ink">{state.error}</span>}
-        {state?.ok && <span className="w-full text-[11px] font-medium text-healthy-ink" role="status">{state.ok}</span>}
+        {state?.error && <span className="w-full text-[12px] font-medium text-nd-ink">{state.error}</span>}
+        {state?.ok && <span className="w-full text-[12px] font-medium text-healthy-ink" role="status">{state.ok}</span>}
       </form>
     );
   }
@@ -109,8 +103,8 @@ export function ActionForm({
             </AlertDialog.Description>
             <form action={action} className="mt-4 space-y-2">
               {fields}
-              {state?.error && <p className="text-[11px] font-medium text-nd-ink">{state.error}</p>}
-              {state?.ok && <p className="text-[11px] font-medium text-healthy-ink" role="status">{state.ok}</p>}
+              {state?.error && <p className="text-[12px] font-medium text-nd-ink">{state.error}</p>}
+              {state?.ok && <p className="text-[12px] font-medium text-healthy-ink" role="status">{state.ok}</p>}
               <div className="flex justify-end gap-2 pt-2">
                 <AlertDialog.Cancel asChild>
                   <button type="button" className="btn btn-secondary">Cancel</button>

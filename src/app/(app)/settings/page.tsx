@@ -27,14 +27,14 @@ export default async function SettingsPage() {
             {UPLOAD_FIELDS.map((field) => (
               <div key={field.key} className="flex items-start justify-between gap-3 rounded-lg border border-line bg-panel-2 px-2.5 py-2">
                 <span className="text-[12px] font-semibold text-ink">{field.label}</span>
-                <span className="text-right text-[10.5px] text-muted">{field.hint}</span>
+                <span className="text-right text-[12px] text-muted">{field.hint}</span>
               </div>
             ))}
           </div>
           <div className="mt-3 rounded-lg border border-line px-2.5 py-2">
-            <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">SAP fields (entered manually in this build)</div>
+            <div className="text-[12px] font-bold uppercase tracking-[0.1em] text-faint">SAP fields (entered manually in this build)</div>
             <ul className="mt-1.5 space-y-1">
-              {SAP_FIELDS.map((field) => <li key={field} className="text-[11px] text-muted">· {field}</li>)}
+              {SAP_FIELDS.map((field) => <li key={field} className="text-[12px] text-muted">· {field}</li>)}
             </ul>
           </div>
         </section>
@@ -52,7 +52,7 @@ export default async function SettingsPage() {
               ["Approval reminder / escalation", "3 / 5 working days"],
             ].map(([label, value]) => (
               <div key={label} className="flex items-center justify-between rounded-lg border border-line bg-panel-2 px-2.5 py-2">
-                <span className="text-[11.5px] text-muted">{label}</span>
+                <span className="text-[12px] text-muted">{label}</span>
                 <span className="text-[12px] font-semibold text-ink">{value}</span>
               </div>
             ))}
@@ -64,13 +64,13 @@ export default async function SettingsPage() {
           <div className="mt-3 overflow-x-auto scroll-thin">
             <table className="w-full min-w-[520px] text-left">
               <thead>
-                <tr className="border-b border-line text-[10px] font-bold uppercase tracking-[0.08em] text-faint">
+                <tr className="border-b border-line text-[12px] font-bold uppercase tracking-[0.08em] text-faint">
                   <th className="py-2 pr-3">Decision</th><th className="py-2 pr-3">Prepared by</th><th className="py-2">Approved by</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {APPROVAL_MATRIX.map((row) => (
-                  <tr key={row.decision} className="text-[11px]">
+                  <tr key={row.decision} className="text-[12px]">
                     <td className="py-2 pr-3 font-medium text-ink">{row.decision}</td>
                     <td className="py-2 pr-3 text-muted">{row.preparedBy}</td>
                     <td className="py-2 text-muted">{row.approvedBy}</td>
@@ -87,12 +87,12 @@ export default async function SettingsPage() {
             {CONFLICT_RULES.map((rule) => (
               <div key={rule.id} className="rounded-lg border border-line bg-panel-2 px-2.5 py-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11.5px] font-semibold text-ink">{rule.title}</span>
+                  <span className="text-[12px] font-semibold text-ink">{rule.title}</span>
                   <span className="badge badge-red">{rule.decidedBy}</span>
                 </div>
-                <div className="mt-1 text-[10.5px] text-muted">{rule.from}</div>
-                <div className="mt-1 text-[10.5px] text-muted">Rental wins → {rule.rentalWins}</div>
-                <div className="mt-1 text-[10.5px] text-muted">Other wins → {rule.otherWins}</div>
+                <div className="mt-1 text-[12px] text-muted">{rule.from}</div>
+                <div className="mt-1 text-[12px] text-muted">Rental wins → {rule.rentalWins}</div>
+                <div className="mt-1 text-[12px] text-muted">Other wins → {rule.otherWins}</div>
               </div>
             ))}
           </div>

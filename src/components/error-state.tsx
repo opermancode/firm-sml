@@ -19,7 +19,7 @@ export function ErrorState({
       <h2 className="font-display text-[16px] font-semibold text-ink">{title}</h2>
       <p className="mt-1.5 max-w-md text-[12.5px] leading-relaxed text-muted">{description}</p>
       {detail && (
-        <pre className="mt-3 max-w-lg overflow-x-auto rounded-lg border border-line bg-panel-2 px-3 py-2 text-left text-[10.5px] text-faint">
+        <pre className="mt-3 max-w-lg overflow-x-auto rounded-lg border border-line bg-panel-2 px-3 py-2 text-left text-[12px] text-faint">
           {detail}
         </pre>
       )}

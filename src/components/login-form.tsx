@@ -47,7 +47,7 @@ export function LoginForm() {
           <div className="font-display text-[17px] font-semibold tracking-[0.08em] text-ink">
             FIRM
           </div>
-          <div className="text-[9.5px] uppercase tracking-[0.18em] text-faint">
+          <div className="text-[12px] uppercase tracking-[0.18em] text-faint">
             Fleet exit cycle · Sanghvi Movers Limited
           </div>
         </div>
@@ -97,7 +97,7 @@ export function LoginForm() {
             {pending ? "Signing in…" : "Sign in"}
           </button>
 
-          <p className="flex items-center gap-1.5 text-[11px] text-faint">
+          <p className="flex items-center gap-1.5 text-[12px] text-faint">
             <Clock3 size={12} /> Session lasts 12 hours. You will be asked to sign in again after it expires.
           </p>
         </form>
@@ -112,7 +112,7 @@ export function LoginForm() {
         >
           <span>
             <span className="block text-[12px] font-semibold text-ink">Demo accounts</span>
-            <span className="block text-[10.5px] text-faint">
+            <span className="block text-[12px] text-faint">
               One per role · click an account to fill the form · password Firm@12345
             </span>
           </span>
@@ -132,8 +132,8 @@ export function LoginForm() {
                       className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-panel-2"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-[11.5px] font-medium text-ink">{meta.name}</span>
-                        <span className="block truncate text-[10px] text-faint">{account.email}</span>
+                        <span className="block truncate text-[12px] font-medium text-ink">{meta.name}</span>
+                        <span className="block truncate text-[12px] text-faint">{account.email}</span>
                       </span>
                       <span className={`badge ${TONE[meta.tone] ?? "badge-slate"}`}>{meta.short}</span>
                     </button>
@@ -141,14 +141,14 @@ export function LoginForm() {
                 );
               })}
             </ul>
-            <p className="px-2.5 pb-1 pt-2 text-[10px] leading-relaxed text-faint">
+            <p className="px-2.5 pb-1 pt-2 text-[12px] leading-relaxed text-faint">
               Change passwords and set <span className="font-mono">SESSION_SECRET</span> before any shared deployment.
             </p>
           </div>
         )}
       </div>
 
-      <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[10.5px] text-faint">
+      <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[12px] text-faint">
         <ShieldAlert size={11} className="text-nd" />
         Confidential. Sanghvi Movers Limited. Internal use only.
       </p>

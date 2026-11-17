@@ -60,7 +60,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
           <Image src="/brand/sml-logo.png" alt="Sanghvi Movers Limited" width={44} height={44} className="h-11 w-11 rounded-[10px] object-contain" priority />
           <div>
             <div className="font-display text-[16px] font-semibold tracking-[0.08em] text-ink">FIRM</div>
-            <div className="text-[9.5px] uppercase tracking-[0.16em] text-faint">Fleet exit cycle · Sanghvi Movers Limited</div>
+            <div className="text-[12px] uppercase tracking-[0.16em] text-faint">Fleet exit cycle · Sanghvi Movers Limited</div>
           </div>
           <span className="badge badge-slate ml-auto">Welcome, {name}</span>
         </div>
@@ -80,7 +80,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
         <div className="card min-h-[540px] p-6 sm:p-8">
           {step === 0 && (
             <div>
-              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-brand">1 of {total} · What FIRM is</div>
+              <div className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand">1 of {total} · What FIRM is</div>
               <h1 className="font-display text-[28px] font-semibold tracking-[-0.03em] text-ink">A controlled route out of the fleet.</h1>
               <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-muted">
                 FIRM moves Old Fleet, Non-Revenue Generating (NRG) and Non-Deployable cranes to international rental, sale or scrap. Every crane goes through every check, there is one owner per step, and nothing leaves the cycle until SAP records the exit.
@@ -94,7 +94,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
                   <div key={item.title} className="rounded-xl border border-line bg-panel-2 p-4">
                     <item.icon size={18} className="text-brand" />
                     <div className="mt-3 text-[12.5px] font-semibold text-ink">{item.title}</div>
-                    <p className="mt-1 text-[11px] leading-relaxed text-muted">{item.text}</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-muted">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -109,12 +109,12 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
 
           {step === 1 && (
             <div>
-              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-brand">2 of {total} · Your role</div>
+              <div className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand">2 of {total} · Your role</div>
               <h1 className="font-display text-[28px] font-semibold tracking-[-0.03em] text-ink">You are {meta?.name ?? role}.</h1>
               <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-muted">{meta?.description ?? "You can view the cycle."}</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-line bg-panel-2 p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">What you will do</div>
+                  <div className="text-[12px] font-bold uppercase tracking-[0.1em] text-faint">What you will do</div>
                   <ul className="mt-3 space-y-2 text-[12px] text-muted">
                     <li>· See every crane in the register and its one current status.</li>
                     <li>· Act only on decisions assigned to your role.</li>
@@ -122,7 +122,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
                   </ul>
                 </div>
                 <div className="rounded-xl border border-line bg-panel-2 p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">What you cannot do</div>
+                  <div className="text-[12px] font-bold uppercase tracking-[0.1em] text-faint">What you cannot do</div>
                   <ul className="mt-3 space-y-2 text-[12px] text-muted">
                     <li>· You cannot change another layer&apos;s decision.</li>
                     <li>· You cannot claim a crane back once SAP has an SO or transfer.</li>
@@ -130,7 +130,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
                   </ul>
                 </div>
               </div>
-              <div className="mt-6 flex items-center gap-2 rounded-xl border border-line px-4 py-3 text-[11.5px] text-muted">
+              <div className="mt-6 flex items-center gap-2 rounded-xl border border-line px-4 py-3 text-[12px] text-muted">
                 <ShieldAlert size={14} className="text-nd" />
                 Every page carries the footer: <strong className="text-ink">Confidential. Sanghvi Movers Limited. Internal use only.</strong>
               </div>
@@ -139,15 +139,15 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
 
           {step === 2 && (
             <div>
-              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-brand">3 of {total} · The eight steps</div>
+              <div className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand">3 of {total} · The eight steps</div>
               <h1 className="font-display text-[28px] font-semibold tracking-[-0.03em] text-ink">How a crane moves through FIRM.</h1>
               <ol className="mt-6 space-y-3">
                 {FLOW.map(([title, text], index) => (
                   <li key={title} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[11px] font-bold text-brand-ink">{index + 1}</span>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand-ink">{index + 1}</span>
                     <div>
                       <div className="text-[13px] font-semibold text-ink">{title}</div>
-                      <div className="text-[11.5px] leading-relaxed text-muted">{text}</div>
+                      <div className="text-[12px] leading-relaxed text-muted">{text}</div>
                     </div>
                   </li>
                 ))}
@@ -157,7 +157,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
 
           {step === 3 && (
             <div>
-              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-brand">4 of {total} · The 20 statuses</div>
+              <div className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand">4 of {total} · The 20 statuses</div>
               <h1 className="font-display text-[28px] font-semibold tracking-[-0.03em] text-ink">One status per crane, always.</h1>
               <p className="mt-3 text-[13px] leading-relaxed text-muted">
                 A status tells you where the crane is, who is responsible, and whether it can still be claimed back. Codes S01 to S20 are grouped into five types.
@@ -166,18 +166,18 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
                 {STATUS_GROUPS.map((group) => (
                   <div key={group.label} className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel-2 px-4 py-3">
                     <span className={`badge ${group.tone}`}>{group.label}</span>
-                    <span className="font-mono text-[11px] font-semibold text-ink">{group.codes}</span>
-                    <span className="text-[11px] text-muted">{group.text}</span>
+                    <span className="font-mono text-[12px] font-semibold text-ink">{group.codes}</span>
+                    <span className="text-[12px] text-muted">{group.text}</span>
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-[11px] text-faint">{STATUSES.length} statuses in total · every crane record shows its code, layer and type.</p>
+              <p className="mt-4 text-[12px] text-faint">{STATUSES.length} statuses in total · every crane record shows its code, layer and type.</p>
             </div>
           )}
 
           {step === 4 && (
             <div>
-              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-brand">5 of {total} · The screens</div>
+              <div className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand">5 of {total} · The screens</div>
               <h1 className="font-display text-[28px] font-semibold tracking-[-0.03em] text-ink">What is where.</h1>
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
                 {SCREENS.map((screen) => (
@@ -185,7 +185,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
                     <screen.icon size={16} className="mt-0.5 shrink-0 text-brand" />
                     <div>
                       <div className="text-[12px] font-semibold text-ink">{screen.title}</div>
-                      <div className="text-[10.5px] leading-relaxed text-muted">{screen.text}</div>
+                      <div className="text-[12px] leading-relaxed text-muted">{screen.text}</div>
                     </div>
                   </div>
                 ))}
@@ -195,12 +195,12 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
 
           {step === 5 && (
             <div>
-              <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.16em] text-brand">6 of {total} · Reading a crane</div>
+              <div className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-brand">6 of {total} · Reading a crane</div>
               <h1 className="font-display text-[28px] font-semibold tracking-[-0.03em] text-ink">Everything about one crane, in one place.</h1>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-line bg-panel-2 p-4">
                   <div className="text-[12px] font-semibold text-ink">The record shows</div>
-                  <ul className="mt-2 space-y-1.5 text-[11px] text-muted">
+                  <ul className="mt-2 space-y-1.5 text-[12px] text-muted">
                     <li>· Status, layer, type and cycle impact</li>
                     <li>· Final category and the three original flags</li>
                     <li>· Sales and Maintenance checks side by side</li>
@@ -210,7 +210,7 @@ export function Onboarding({ name, role }: { name: string; role: string }) {
                 </div>
                 <div className="rounded-xl border border-line bg-panel-2 p-4">
                   <div className="text-[12px] font-semibold text-ink">The rules to remember</div>
-                  <ul className="mt-2 space-y-1.5 text-[11px] text-muted">
+                  <ul className="mt-2 space-y-1.5 text-[12px] text-muted">
                     <li>· Non-Deployable beats Old Fleet, which beats NRG.</li>
                     <li>· Finance can override a category, but only with a written reason; the original flags stay visible.</li>
                     <li>· A conflict pauses everything until CBO, CSO or Strategy decides.</li>

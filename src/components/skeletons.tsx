@@ -62,6 +62,33 @@ export function ChartSkeleton() {
   );
 }
 
+/** Dashboard-specific skeleton that mirrors the final bento layout. */
+export function DashboardSkeleton() {
+  return (
+    <div className="space-y-5">
+      <Skeleton className="h-3 w-28" />
+      <Skeleton className="h-8 w-72" />
+      <Skeleton className="h-3 w-[440px] max-w-full" />
+      <div className="card flex flex-wrap items-center gap-4 p-4">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="ml-auto h-5 w-24" />
+        <Skeleton className="h-1.5 w-full" />
+      </div>
+      <KpiSkeletonRow />
+      <div className="grid gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-7 min-[1440px]:col-span-8"><ChartSkeleton /></div>
+        <div className="lg:col-span-5 min-[1440px]:col-span-4"><CardSkeleton rows={5} /></div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CardSkeleton rows={4} />
+        <TableSkeleton rows={5} columns={3} />
+      </div>
+    </div>
+  );
+}
+
 export function PageSkeleton() {
   return (
     <div className="space-y-5">

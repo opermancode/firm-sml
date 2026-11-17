@@ -3,20 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
-  BadgeCheck,
-  BookOpen,
-  CalendarRange,
-  LayoutDashboard,
-  Menu,
-  ShieldAlert,
-  SlidersHorizontal,
-  Truck,
-  UploadCloud,
-  UsersRound,
-  X,
+  BadgeCheck, BookOpen, CalendarRange, LayoutDashboard, Menu,
+  PanelLeftClose, PanelLeftOpen, SlidersHorizontal, Truck,
+  UploadCloud, UsersRound, X,
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -28,6 +20,8 @@ export interface SidebarUser {
   role: string;
   designation: string | null;
 }
+
+const STORAGE_KEY = "firm-sidebar-collapsed";
 
 const NAV: {
   label: string;
@@ -57,9 +51,11 @@ const NAV: {
 
 function NavLinks({
   pendingApprovals,
+  collapsed,
   onNavigate,
 }: {
   pendingApprovals: number;
+  collapsed: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -67,8 +63,9 @@ function NavLinks({
     <nav className="space-y-5" aria-label="Primary">
       {NAV.map((group) => (
         <div key={group.label}>
-          <div className="sidebar-group">{group.label}</div>
-          <div className="space-y-0.5">
+          {!collapsed && <div className="sidebar-group">{group.label}</div>}
+          {collapsed && <div className="mx-3 mb-2 border-t border-line" />}
+          <div className="space-y-1">
             {group.items.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -79,14 +76,18 @@ function NavLinks({
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
-                  className={`sidebar-link ${active ? "active" : ""}`}
+                  title={collapsed ? item.label : undefined}
+                  className={`sidebar-link ${active ? "active" : ""} ${collapsed ? "justify-center px-0" : ""}`}
                 >
-                  <Icon size={16} strokeWidth={1.9} />
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge && pendingApprovals > 0 && (
-                    <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-nd px-1 text-[9.5px] font-bold text-white">
+                  <Icon size={17} strokeWidth={1.9} className="shrink-0" />
+                  {!collapsed && <span className="flex-1">{item.label}</span>}
+                  {!collapsed && item.badge && pendingApprovals > 0 && (
+                    <span className="flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-danger px-1 text-[12px] font-bold text-white tabular-nums">
                       {pendingApprovals}
                     </span>
+                  )}
+                  {collapsed && item.badge && pendingApprovals > 0 && (
+                    <span className="absolute right-1 top-0.5 h-2 w-2 rounded-full bg-danger" aria-label={`${pendingApprovals} approvals`} />
                   )}
                 </Link>
               );
@@ -109,30 +110,17 @@ function Brand({ compact = false }: { compact?: boolean }) {
         className="h-[38px] w-[38px] shrink-0 rounded-[8px] object-contain"
         priority
       />
-      <span>
-        <span
-          className={`block font-display font-semibold tracking-[0.06em] text-ink ${
-            compact ? "text-[13px]" : "text-[15px]"
-          }`}
-        >
-          FIRM
+      {!compact && (
+        <span>
+          <span className="block font-display text-[15px] font-semibold tracking-[0.06em] text-ink">
+            FIRM
+          </span>
+          <span className="block text-[12px] uppercase tracking-[0.16em] text-muted">
+            Fleet exit cycle
+          </span>
         </span>
-        <span className="block text-[9px] uppercase tracking-[0.16em] text-faint">
-          Fleet exit cycle
-        </span>
-      </span>
+      )}
     </Link>
-  );
-}
-
-function ConfidentialTag() {
-  return (
-    <div className="flex items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--nd)_26%,transparent)] bg-nd-soft px-2 py-1">
-      <ShieldAlert size={11} className="text-nd-ink" />
-      <span className="text-[8.5px] font-bold uppercase tracking-[0.13em] text-nd-ink">
-        Confidential
-      </span>
-    </div>
   );
 }
 
@@ -144,42 +132,95 @@ export function Sidebar({
   pendingApprovals: number;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const role = ROLE_MAP[user.role as Role];
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(STORAGE_KEY) === "1";
+    setCollapsed(stored);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--firm-sidebar-w",
+      collapsed ? "76px" : "252px",
+    );
+    window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-line bg-panel px-3 py-5 lg:flex">
-        <Brand />
-        <div className="mt-3 px-1">
-          <ConfidentialTag />
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-line bg-panel px-3 py-5 transition-[width] duration-200 ease-out lg:flex ${collapsed ? "w-[76px]" : "w-[252px]"}`}
+      >
+        <div className="flex items-center justify-between gap-1">
+          <Brand compact={collapsed} />
+          {!collapsed && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon"
+              onClick={() => setCollapsed(true)}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose size={16} />
+            </button>
+          )}
         </div>
+        {collapsed && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon mx-auto mt-3"
+            onClick={() => setCollapsed(false)}
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <PanelLeftOpen size={16} />
+          </button>
+        )}
+
         <div className="mt-5 flex-1 overflow-y-auto scroll-thin px-1.5">
-          <NavLinks pendingApprovals={pendingApprovals} />
+          <NavLinks pendingApprovals={pendingApprovals} collapsed={collapsed} />
         </div>
+
         <div className="mt-4 space-y-3 px-1.5">
-          <div className="rounded-lg border border-line bg-panel-2 px-2.5 py-2">
+          <div
+            className={`rounded-lg border border-line bg-panel-2 ${collapsed ? "flex justify-center px-1 py-2" : "px-2.5 py-2"}`}
+            title={`${user.name} · ${role?.short ?? user.role}`}
+          >
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white tabular-nums">
                 {user.name.split(/\s+/).filter(Boolean).slice(0, 2)
                   .map((part) => part[0]?.toUpperCase()).join("")}
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[12px] font-semibold text-ink">{user.name}</div>
-                <div className="truncate text-[10px] text-muted">
-                  {user.designation ?? role?.short ?? user.role}
-                </div>
-              </div>
-              <span className="badge badge-slate">{role?.short ?? user.role}</span>
+              {!collapsed && (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold text-ink">{user.name}</div>
+                    <div className="truncate text-[12px] text-muted">
+                      {user.designation ?? role?.short ?? user.role}
+                    </div>
+                  </div>
+                  <span className="badge badge-slate">{role?.short ?? user.role}</span>
+                </>
+              )}
             </div>
           </div>
-          <Link href="/welcome" className="sidebar-link">
-            <BookOpen size={15} /> Guide &amp; help
+          <Link
+            href="/welcome"
+            title="Guide & help"
+            className={`sidebar-link ${collapsed ? "justify-center px-0" : ""}`}
+          >
+            <BookOpen size={16} className="shrink-0" />
+            {!collapsed && <span>Guide &amp; help</span>}
           </Link>
-          <div className="px-1 text-[9px] leading-relaxed text-faint">
-            Sanghvi Movers Limited
-            <br />
-            FIRM cycle · Internal use only
-          </div>
+          {!collapsed && (
+            <div className="px-1 text-[12px] leading-relaxed text-muted">
+              Sanghvi Movers Limited
+              <br />
+              FIRM cycle · Internal use only
+            </div>
+          )}
         </div>
       </aside>
 
@@ -205,13 +246,12 @@ export function Sidebar({
                     </button>
                   </Dialog.Close>
                 </div>
-                <div className="mt-3"><ConfidentialTag /></div>
                 <div className="mt-5 flex-1 overflow-y-auto">
-                  <NavLinks pendingApprovals={pendingApprovals} onNavigate={() => setMobileOpen(false)} />
+                  <NavLinks pendingApprovals={pendingApprovals} collapsed={false} onNavigate={() => setMobileOpen(false)} />
                 </div>
                 <div className="mt-4 rounded-lg border border-line bg-panel-2 px-3 py-2.5">
-                  <div className="truncate text-[12px] font-semibold text-ink">{user.name}</div>
-                  <div className="truncate text-[10.5px] text-muted">
+                  <div className="truncate text-[13px] font-semibold text-ink">{user.name}</div>
+                  <div className="truncate text-[12px] text-muted">
                     {user.designation ?? role?.short ?? user.role}
                   </div>
                   <div className="mt-1.5">
