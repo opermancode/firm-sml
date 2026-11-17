@@ -1,194 +1,101 @@
-import Link from "next/link";
-import { History, Info, ShieldCheck, Users } from "lucide-react";
-import { getPolicy, getUsers } from "@/lib/api";
-import { POLICY_DEFAULTS } from "@/lib/policy";
-import { hasRole, requireUser } from "@/lib/auth";
+import { CalendarClock, CircleAlert, FileSpreadsheet, ShieldCheck } from "lucide-react";
+import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
-import { PolicyForm } from "@/components/policy-form";
-import { ReclassifyButton } from "@/components/reclassify-button";
-import { RoleGate } from "@/components/role-gate";
+import {
+  APPROVAL_MATRIX, CONFLICT_RULES, SAP_FIELDS, UPLOAD_FIELDS,
+} from "@/lib/firm/workflow";
 
 export const dynamic = "force-dynamic";
 
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  ADMIN: "Full access, including policy changes and override of the sign-off chain.",
-  PREPARER: "Imports fleet data and prepares the evaluation run for review.",
-  REVIEWER: "Reviews the classification and forwards it for approval, or returns it for rework.",
-  APPROVER: "Final management approval of the fleet classification.",
-};
-
-const ROLE_TONE: Record<string, string> = {
-  ADMIN: "badge-brand",
-  PREPARER: "badge-info",
-  REVIEWER: "badge-amber",
-  APPROVER: "badge-healthy",
-};
-
 export default async function SettingsPage() {
-  const user = await requireUser();
-  const [policy, users] = await Promise.all([getPolicy(), getUsers()]);
-
-  const canEdit = user.role === "ADMIN";
-  const canRun = hasRole(user, "PREPARER");
+  await requireUser();
 
   return (
     <>
       <PageHeader
-        eyebrow="Configuration"
-        title="Policy settings"
-        description="Every classification threshold is stored in the database, so a policy revision does not need a code change. Existing evaluation runs keep the snapshot they were computed with."
-        actions={
-          <Link href="/models" className="btn btn-secondary">
-            Model master
-          </Link>
-        }
+        eyebrow="System"
+        title="Rules & settings"
+        description="The business rules from the FIRM document shown as reference. The workflow store lives in .data/firm-workflow.json and is seeded on first run."
       />
 
-      <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
-        <PolicyForm policy={policy} canEdit={canEdit} />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="card p-4">
+          <h2 className="flex items-center gap-2 panel-title"><FileSpreadsheet size={15} className="text-brand" /> Upload template fields</h2>
+          <p className="panel-subtitle mt-1">The only crane data the team enters at upload.</p>
+          <div className="mt-3 space-y-2">
+            {UPLOAD_FIELDS.map((field) => (
+              <div key={field.key} className="flex items-start justify-between gap-3 rounded-lg border border-line bg-panel-2 px-2.5 py-2">
+                <span className="text-[12px] font-semibold text-ink">{field.label}</span>
+                <span className="text-right text-[10.5px] text-muted">{field.hint}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 rounded-lg border border-line px-2.5 py-2">
+            <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-faint">SAP fields (entered manually in this build)</div>
+            <ul className="mt-1.5 space-y-1">
+              {SAP_FIELDS.map((field) => <li key={field} className="text-[11px] text-muted">· {field}</li>)}
+            </ul>
+          </div>
+        </section>
 
-        <div className="space-y-4">
-          <section className="card p-4" aria-labelledby="access-title">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={15} className="text-brand" />
-              <h2 id="access-title" className="panel-title">
-                Your access
-              </h2>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-line bg-panel-2 px-3 py-2.5">
-              <div className="min-w-0">
-                <div className="truncate text-[12px] font-semibold text-ink">{user.name}</div>
-                <div className="truncate text-[10.5px] text-muted">
-                  {user.designation ?? user.email}
-                </div>
+        <section className="card p-4">
+          <h2 className="flex items-center gap-2 panel-title"><CalendarClock size={15} className="text-brand" /> Proposed windows</h2>
+          <p className="panel-subtitle mt-1">Timings in the document; confirm with CBO / CEO before production.</p>
+          <div className="mt-3 space-y-2">
+            {[
+              ["International BU window", "20 days"],
+              ["Marketing catalogue window", "5 working days"],
+              ["Sale window before scrap decision", "60 days"],
+              ["Conflict decision", "3 working days"],
+              ["Claim-back to SO or reservation", "15 days"],
+              ["Approval reminder / escalation", "3 / 5 working days"],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between rounded-lg border border-line bg-panel-2 px-2.5 py-2">
+                <span className="text-[11.5px] text-muted">{label}</span>
+                <span className="text-[12px] font-semibold text-ink">{value}</span>
               </div>
-              <span className={`badge ${ROLE_TONE[user.role] ?? "badge-slate"}`}>{user.role}</span>
-            </div>
-            <p className="mt-2.5 text-[11px] leading-relaxed text-muted">
-              {ROLE_DESCRIPTIONS[user.role] ?? "Standard access."}
-            </p>
-            {!canEdit && (
-              <p className="mt-2 rounded-lg border border-line bg-panel-2 px-2.5 py-2 text-[10.5px] leading-relaxed text-faint">
-                Policy thresholds are read-only for your role. Ask an Administrator to make a
-                change.
-              </p>
-            )}
+            ))}
+          </div>
+        </section>
 
-            {canRun ? (
-              <div className="mt-4 border-t border-line pt-4">
-                <div className="mb-1.5 text-[11.5px] font-semibold text-ink">
-                  Re-run the classification
-                </div>
-                <p className="mb-2.5 text-[10.5px] leading-relaxed text-muted">
-                  Applies the saved policy to the current fleet data and creates a new run for
-                  sign-off. Useful after a threshold change.
-                </p>
-                <ReclassifyButton />
-              </div>
-            ) : (
-              <div className="mt-4 border-t border-line pt-4">
-                <div className="mb-1.5 text-[11.5px] font-semibold text-ink">
-                  Re-run the classification
-                </div>
-                <p className="mb-2.5 text-[10.5px] leading-relaxed text-muted">
-                  Creates a new evaluation run for sign-off after a policy or data change.
-                </p>
-                <RoleGate
-                  role={user.role}
-                  allow={["PREPARER"]}
-                  mode="disable"
-                  reason="Only a Preparer or Administrator can run a new classification. Ask a preparer to re-run it."
-                >
-                  <span className="btn btn-secondary">Reclassify current fleet</span>
-                </RoleGate>
-              </div>
-            )}
-          </section>
+        <section className="card p-4">
+          <h2 className="flex items-center gap-2 panel-title"><ShieldCheck size={15} className="text-brand" /> Approval matrix</h2>
+          <div className="mt-3 overflow-x-auto scroll-thin">
+            <table className="w-full min-w-[520px] text-left">
+              <thead>
+                <tr className="border-b border-line text-[10px] font-bold uppercase tracking-[0.08em] text-faint">
+                  <th className="py-2 pr-3">Decision</th><th className="py-2 pr-3">Prepared by</th><th className="py-2">Approved by</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {APPROVAL_MATRIX.map((row) => (
+                  <tr key={row.decision} className="text-[11px]">
+                    <td className="py-2 pr-3 font-medium text-ink">{row.decision}</td>
+                    <td className="py-2 pr-3 text-muted">{row.preparedBy}</td>
+                    <td className="py-2 text-muted">{row.approvedBy}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-          <section className="card p-4" aria-labelledby="defaults-title">
-            <div className="flex items-center gap-2">
-              <History size={15} className="text-faint" />
-              <h2 id="defaults-title" className="panel-title">
-                Policy defaults
-              </h2>
-            </div>
-            <dl className="mt-3 space-y-2 text-[11.5px]">
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">Old Fleet age</dt>
-                <dd className="font-medium text-ink">&gt; {POLICY_DEFAULTS.oldFleetYears} yrs</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">NRG utilisation</dt>
-                <dd className="font-medium text-ink">&lt; {POLICY_DEFAULTS.nrgUtilPct}%</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">NRG monthly yield</dt>
-                <dd className="font-medium text-ink">&lt; {POLICY_DEFAULTS.nrgYieldPct}%</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">Consecutive years</dt>
-                <dd className="font-medium text-ink">{POLICY_DEFAULTS.nrgYears}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">Repair cost trigger</dt>
-                <dd className="font-medium text-ink">&gt; {POLICY_DEFAULTS.repairPct}%</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">Certificate grace</dt>
-                <dd className="font-medium text-ink">{POLICY_DEFAULTS.certGraceDays} days</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted">Obsolescence scope</dt>
-                <dd className="font-medium text-ink">Old Fleet only</dd>
-              </div>
-            </dl>
-            <div className="mt-3 flex items-start gap-1.5 rounded-lg border border-line bg-panel-2 px-3 py-2 text-[10.5px] leading-relaxed text-faint">
-              <Info size={12} className="mt-0.5 shrink-0" />
-              <span>
-                Defaults mirror the FIRM definition document. Changing a value affects only new
-                evaluation runs.
-              </span>
-            </div>
-          </section>
-
-          <section className="card overflow-hidden" aria-labelledby="users-title">
-            <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-              <Users size={15} className="text-faint" />
-              <div>
-                <h2 id="users-title" className="panel-title">
-                  Users &amp; roles
-                </h2>
-                <p className="panel-subtitle mt-0.5">
-                  {users.length} accounts seeded for evaluation
-                </p>
-              </div>
-            </div>
-            <div className="divide-y divide-line">
-              {users.map((account) => (
-                <div
-                  key={account.id}
-                  className="flex items-center justify-between gap-2 px-4 py-2.5"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-[12px] font-medium text-ink">{account.name}</div>
-                    <div className="truncate text-[10.5px] text-muted">
-                      {account.designation ?? account.email}
-                    </div>
-                  </div>
-                  <span className={`badge ${ROLE_TONE[account.role] ?? "badge-slate"}`}>
-                    {account.role}
-                  </span>
+        <section className="card p-4">
+          <h2 className="flex items-center gap-2 panel-title"><CircleAlert size={15} className="text-brand" /> Conflict rules</h2>
+          <div className="mt-3 space-y-2">
+            {CONFLICT_RULES.map((rule) => (
+              <div key={rule.id} className="rounded-lg border border-line bg-panel-2 px-2.5 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11.5px] font-semibold text-ink">{rule.title}</span>
+                  <span className="badge badge-red">{rule.decidedBy}</span>
                 </div>
-              ))}
-            </div>
-            <div className="border-t border-line px-4 py-2.5 text-[10.5px] text-faint">
-              Seeded credentials are for evaluation only.{" "}
-              <Link href="/runs" className="font-medium text-brand">
-                View evaluation runs →
-              </Link>
-            </div>
-          </section>
-        </div>
+                <div className="mt-1 text-[10.5px] text-muted">{rule.from}</div>
+                <div className="mt-1 text-[10.5px] text-muted">Rental wins → {rule.rentalWins}</div>
+                <div className="mt-1 text-[10.5px] text-muted">Other wins → {rule.otherWins}</div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </>
   );

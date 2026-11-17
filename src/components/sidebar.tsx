@@ -1,23 +1,26 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   BadgeCheck,
-  Boxes,
-  ClipboardList,
+  BookOpen,
+  CalendarRange,
   LayoutDashboard,
   Menu,
   ShieldAlert,
   SlidersHorizontal,
   Truck,
   UploadCloud,
+  UsersRound,
   X,
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ROLE_MAP, type Role } from "@/lib/firm/workflow";
 
 export interface SidebarUser {
   name: string;
@@ -30,30 +33,25 @@ const NAV: {
   label: string;
   items: { href: string; label: string; icon: typeof LayoutDashboard; badge?: boolean }[];
 }[] = [
+  { label: "Overview", items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }] },
   {
-    label: "Overview",
-    items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }],
-  },
-  {
-    label: "Fleet",
+    label: "FIRM cycle",
     items: [
-      { href: "/assets", label: "Fleet Assets", icon: Truck },
-      { href: "/import", label: "Import Data", icon: UploadCloud },
+      { href: "/cranes", label: "Crane register", icon: Truck },
+      { href: "/cycles", label: "Cycles", icon: CalendarRange },
+      { href: "/import", label: "Upload fleet", icon: UploadCloud },
     ],
   },
   {
     label: "Governance",
     items: [
-      { href: "/runs", label: "Evaluation Runs", icon: ClipboardList },
       { href: "/approvals", label: "Approvals", icon: BadgeCheck, badge: true },
+      { href: "/roles", label: "Roles & people", icon: UsersRound },
     ],
   },
   {
-    label: "Configuration",
-    items: [
-      { href: "/models", label: "Model Master", icon: Boxes },
-      { href: "/settings", label: "Policy Settings", icon: SlidersHorizontal },
-    ],
+    label: "System",
+    items: [{ href: "/settings", label: "Rules & settings", icon: SlidersHorizontal }],
   },
 ];
 
@@ -103,10 +101,14 @@ function NavLinks({
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/" className="flex items-center gap-2.5 px-1" aria-label="FIRM home">
-      <span className="relative flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand text-[16px] font-bold text-white shadow-sm">
-        <span className="font-display">F</span>
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-nd ring-2 ring-panel" />
-      </span>
+      <Image
+        src="/brand/sml-logo.png"
+        alt="Sanghvi Movers Limited"
+        width={38}
+        height={38}
+        className="h-[38px] w-[38px] shrink-0 rounded-[8px] object-contain"
+        priority
+      />
       <span>
         <span
           className={`block font-display font-semibold tracking-[0.06em] text-ink ${
@@ -116,7 +118,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
           FIRM
         </span>
         <span className="block text-[9px] uppercase tracking-[0.16em] text-faint">
-          Fleet Classification
+          Fleet exit cycle
         </span>
       </span>
     </Link>
@@ -142,6 +144,7 @@ export function Sidebar({
   pendingApprovals: number;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const role = ROLE_MAP[user.role as Role];
 
   return (
     <>
@@ -157,26 +160,25 @@ export function Sidebar({
           <div className="rounded-lg border border-line bg-panel-2 px-2.5 py-2">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white">
-                {user.name
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((part) => part[0]?.toUpperCase())
-                  .join("")}
+                {user.name.split(/\s+/).filter(Boolean).slice(0, 2)
+                  .map((part) => part[0]?.toUpperCase()).join("")}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-semibold text-ink">{user.name}</div>
                 <div className="truncate text-[10px] text-muted">
-                  {user.designation ?? user.email}
+                  {user.designation ?? role?.short ?? user.role}
                 </div>
               </div>
-              <span className="badge badge-slate">{user.role}</span>
+              <span className="badge badge-slate">{role?.short ?? user.role}</span>
             </div>
           </div>
+          <Link href="/welcome" className="sidebar-link">
+            <BookOpen size={15} /> Guide &amp; help
+          </Link>
           <div className="px-1 text-[9px] leading-relaxed text-faint">
             Sanghvi Movers Limited
             <br />
-            Policy v1.0 · Internal use only
+            FIRM cycle · Internal use only
           </div>
         </div>
       </aside>
@@ -187,11 +189,7 @@ export function Sidebar({
           <ThemeToggle />
           <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
             <Dialog.Trigger asChild>
-              <button
-                type="button"
-                className="btn btn-secondary btn-icon"
-                aria-label="Open navigation menu"
-              >
+              <button type="button" className="btn btn-secondary btn-icon" aria-label="Open navigation menu">
                 <Menu size={17} />
               </button>
             </Dialog.Trigger>
@@ -202,42 +200,28 @@ export function Sidebar({
                 <div className="flex items-center justify-between">
                   <Brand />
                   <Dialog.Close asChild>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-icon"
-                      aria-label="Close navigation menu"
-                    >
+                    <button type="button" className="btn btn-ghost btn-icon" aria-label="Close navigation menu">
                       <X size={17} />
                     </button>
                   </Dialog.Close>
                 </div>
-                <div className="mt-3">
-                  <ConfidentialTag />
-                </div>
+                <div className="mt-3"><ConfidentialTag /></div>
                 <div className="mt-5 flex-1 overflow-y-auto">
-                  <NavLinks
-                    pendingApprovals={pendingApprovals}
-                    onNavigate={() => setMobileOpen(false)}
-                  />
+                  <NavLinks pendingApprovals={pendingApprovals} onNavigate={() => setMobileOpen(false)} />
                 </div>
                 <div className="mt-4 rounded-lg border border-line bg-panel-2 px-3 py-2.5">
                   <div className="truncate text-[12px] font-semibold text-ink">{user.name}</div>
                   <div className="truncate text-[10.5px] text-muted">
-                    {user.designation ?? user.email}
+                    {user.designation ?? role?.short ?? user.role}
                   </div>
                   <div className="mt-1.5">
-                    <span className="badge badge-brand">{user.role}</span>
+                    <span className="badge badge-brand">{role?.short ?? user.role}</span>
                   </div>
                 </div>
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>
-          <UserMenu
-            name={user.name}
-            email={user.email}
-            designation={user.designation}
-            role={user.role}
-          />
+          <UserMenu name={user.name} email={user.email} designation={user.designation} role={user.role} />
         </div>
       </header>
     </>

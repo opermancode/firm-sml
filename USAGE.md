@@ -1,871 +1,425 @@
-# FIRM — Complete Usage Guide
+# FIRM — Usage Guide (Business Process Source of Truth)
 
-**FIRM** (Fleet Inventory & Retention Management) is the internal fleet-classification
-tool for **Sanghvi Movers Limited**. It turns the crane fleet workbook into a governed,
-auditable classification of every crane as **Old Fleet**, **Non-Deployable**,
-**Non-Revenue Generating (NRG)** or **Healthy**.
+**FIRM** is the internal crane-disposal cycle for **Sanghvi Movers Limited**. This
+document describes how the cycle works and how the app supports it. It is written
+from the *FIRM Business Process Document* and is the functional source of truth for
+the rebuilt application.
 
-> **Confidential — Sanghvi Movers Limited. Internal use only.**
-> The workbook, classifications, retention economics and approval records are
-> commercially sensitive. Do not share exports outside the authorised sign-off group.
-
----
-
-## 1. What the app does
-
-The app answers one question, objectively and repeatably:
-
-> *For every crane we own, what is its classification under the current FIRM policy,
-> why did it get that classification, and who signed off on it?*
-
-It does this in five stages:
-
-| Stage | What happens | Where |
-| ----- | ------------ | ----- |
-| **1. Capture** | Upload an Excel workbook with the fleet master, three years of performance and retention assessments. | `/import` |
-| **2. Validate** | Every row is checked for required fields, valid dates, valid model names and referential integrity. Nothing is written until you commit. | `/import` |
-| **3. Classify** | The engine applies the policy to every crane and stores every reason, threshold and metric. | Automatic on commit |
-| **4. Review** | The run moves through **Prepared By → Reviewed By → Approved By**. | `/runs/[id]`, `/approvals` |
-| **5. Monitor** | Dashboard, fleet register, asset detail, model master and CSV export always reflect the latest evaluation. | `/`, `/assets` |
-
-There is **no SAP integration**. The workbook is the source of truth for each
-evaluation. Re-uploading a corrected workbook updates the fleet and creates a new
-evaluation run.
+> **Confidential. Sanghvi Movers Limited. Internal use only.**
+> Fleet data, rental quotes, sale prices and approval records are commercially
+> sensitive. Do not share them outside the authorised group.
 
 ---
 
-## 2. The mental model
+## 1. Purpose and scope
 
-Before using the app, understand these five concepts.
+FIRM is a structured cycle that moves **Old Fleet**, **Non-Revenue Generating (NRG)**
+and **Non-Deployable** cranes to one of three outcomes:
 
-### 2.1 Asset (crane)
+- **International rental** — the crane is transferred to an international business
+  unit (BU) through SAP.
+- **Sale** — the crane is sold domestically or internationally through SCM.
+- **Scrap** — if the crane cannot be sold, it is scrapped.
 
-An asset is one owned crane, identified by **Asset Code**. The app keeps the latest
-master data for it: model, year of manufacture, capex, certificates, OEM support,
-spares availability, compliance, repair estimate and location.
+The cycle has one owner per step, clear approvals, and an SAP record for every exit.
+Four rules shape the whole process:
 
-### 2.2 Evaluation run
+| Rule | What it means |
+| ---- | ------------- |
+| **Every crane goes through every check** | Sales and Maintenance review the full fleet **in parallel**, not one after the other. |
+| **International rental comes first** | Old Fleet and NRG cranes are offered to international BUs **before** sale. Non-Deployable cranes skip rental and go straight to sale (then scrap if unsold). |
+| **SAP is the hard stop** | A crane leaves FIRM only when SAP records its exit — a sales order (SO) or an asset transfer for international deployment. After that, **nobody can claim it back**. |
+| **Active SO rule** | Cranes already on rent stay in the cycle. Teams may quote, claim and approve as normal, but a **new SO, deployment or handover happens only on or after the current SO end date** recorded for the crane. This date is shown on every crane as **"Execution allowed from"**. |
 
-An **evaluation run** is an immutable snapshot of a classification exercise:
-
-- the **evaluation date**,
-- the **policy snapshot** used at that moment,
-- one result per asset, with every **reason** and **metric**,
-- the **sign-off trail** and **audit entries**.
-
-Runs are numbered (`#1`, `#2`, …). A run is never edited. A new import or a
-reclassification creates a new run, so history stays reproducible even after policy
-thresholds change.
-
-### 2.3 Flags vs primary class
-
-Each crane can carry **more than one flag**:
-
-- `Old Fleet` — age above the marketability threshold.
-- `Non-Deployable` — serviceability failure.
-- `NRG` — confirmed under-performance plus retention economics.
-- `NRG Review` — Condition 1 met, but the retention assessment is missing.
-
-The **primary class** is the single most severe action, used for the classification
-mix and the fleet register. Precedence:
-
-```
-Non-Deployable  >  NRG  >  NRG Review  >  Old Fleet  >  Healthy
-```
-
-A crane that is both Old Fleet and Non-Deployable appears as **Non-Deployable** in
-the primary mix but still carries the Old Fleet flag in its detail page.
-
-### 2.4 Reason trail
-
-Every classification produces a list of reasons, each with:
-
-- **area** — Old Fleet, Non-Deployable or NRG,
-- **severity** — `critical`, `warning`, `info` or `pass`,
-- **title / detail** — what was tested and what was observed,
-- **observed / threshold** — the number versus the policy limit.
-
-The asset detail page (`/assets/[code]`) and the run detail page show this trail.
-Nothing is a black box: a reviewer can see exactly why a crane was flagged.
-
-### 2.5 Policy snapshot
-
-All thresholds live in the database and are editable in `/settings`. Each run stores
-the policy it was computed with. Changing a threshold affects **new** runs only;
-old runs keep their original snapshot.
+> **SAP data in this build.** There is **no live SAP connection** here. The four SAP
+> fields — **SAP Status, SO Number, SO Start Date and SO End Date** — are entered
+> manually in the fleet upload from the SAP system of record. **In production these
+> fields are pulled automatically from SAP** and are not typed by hand. SAP remains
+> the hard stop in both cases: the SO (or international asset transfer) is the event
+> that locks a crane and ends all claim-back rights.
 
 ---
 
-## 3. Roles and permissions
+## 2. Roles (Section 2)
 
-The app has four roles. A user has exactly one role.
+There are **12 roles**. A user has one role; the role decides what they can see and do.
 
-| Capability | ADMIN | PREPARER | REVIEWER | APPROVER |
-| ---------- | :---: | :------: | :------: | :------: |
-| Sign in, view dashboard, register, runs | ✅ | ✅ | ✅ | ✅ |
-| Download template / sample, validate workbook | ✅ | ✅ | ✅ | ✅ |
-| Commit an import | ✅ | ✅ | — | — |
-| Prepare a run (PENDING/RETURNED → PREPARED) | ✅ | ✅ | — | — |
-| Review a run (PREPARED → REVIEWED) | ✅ | — | ✅ | — |
-| Approve a run (REVIEWED → APPROVED) | ✅ | — | — | ✅ |
-| Return a run for rework | ✅ | — | ✅ | ✅ |
-| Reclassify the current fleet | ✅ | ✅ | — | — |
-| Edit policy thresholds | ✅ | — | — | — |
-| Export CSV | ✅ | ✅ | ✅ | ✅ |
+| Role | What they do in FIRM |
+| ---- | -------------------- |
+| **FP&A** | Starts the FIRM cycle, uploads the fleet Excel, and validates the sale price before management approval. |
+| **Sales Team (Domestic)** | Confirms marketability, flags NRG cranes, writes expected deployment duration, and can claim a crane back for domestic rental before an SO exists. |
+| **Maintenance Team** | Flags deployability status (**Deployable / Non-Deployable**) for every crane, with a reason. |
+| **Finance** | Deduplicates the three inputs (Section 4), finalises the FIRM list, and closes out exited cranes. |
+| **Strategy Team (International)** | Floats Old Fleet and NRG cranes to all international BUs for rental, evaluates quotes, awards the crane, and can claim it back for international rental before an SO. |
+| **International BUs** | Decide whether they want a crane on rental and share their rental terms (quote). |
+| **Marketing Team** | Uploads the crane catalogue within a fixed window before the crane goes to SCM. |
+| **SCM Team** | Runs domestic and international sale and scrap sale, and brings quotations for approval. |
+| **CBO** | Final call when SCM has a sale quotation and domestic Sales has a rental opportunity; approves sale per DOA. |
+| **CSO** | Final call and exception approval when the International team has a rental opportunity on a crane that also has a sale quotation. |
+| **MD** | Approves sale, scrap sale and exceptions per Section 7. |
+| **Global Administrator** | Sees the status of every crane in the cycle and sends reminders to push stuck cranes forward. Does **not** take business calls. |
 
-**Segregation of duties.** Except for an Administrator, the same person cannot record
-two consecutive stages of the same run. If Satish prepares a run, a different
-reviewer must review it; if Prajwal reviews it, a different approver must approve it.
-
-**Demo accounts** (seeded for evaluation only):
-
-| Name | Role | Email | Password |
-| ---- | ---- | ----- | -------- |
-| System Administrator | ADMIN | `admin@firm.local` | `Admin@12345` |
-| Satish Irale (AVP – SCM) | PREPARER | `satish.irale@firm.local` | `Firm@12345` |
-| Prajwal Kumar (CBO) | REVIEWER | `prajwal.kumar@firm.local` | `Firm@12345` |
-| Abhijeet Sawarkar (VP) | REVIEWER | `abhijeet.sawarkar@firm.local` | `Firm@12345` |
-| R. Manoj (VP) | REVIEWER | `r.manoj@firm.local` | `Firm@12345` |
-| Gaurang Desai (CEO) | APPROVER | `gaurang.desai@firm.local` | `Firm@12345` |
-| Rishi Sanghvi (MD) | APPROVER | `rishi.sanghvi@firm.local` | `Firm@12345` |
-
-Change the passwords and `SESSION_SECRET` before any shared deployment.
+The **Global Administrator** is a progress monitor, not a business approver: they
+chase missing inputs and unresolved conflicts, but the business decisions in
+Sections 6 and 7 are made by the named approvers.
 
 ---
 
-## 4. End-to-end walkthrough
+## 3. End-to-end to-be flow (Section 3)
 
-### Step 1 — Sign in
+The short version: FP&A uploads the fleet, Sales and Maintenance review it side by
+side, and Finance finalises the list. Old Fleet and NRG cranes are offered to the
+international BUs first; anything they don't take goes up for sale. Non-Deployable
+cranes skip rental and go straight to sale. A crane leaves FIRM only when SAP records
+its exit — a sale SO or an international asset transfer.
 
-Open the app (default `http://localhost:3100`). Sign in with your FIRM account.
-Unauthenticated visits to any app page redirect to `/login`. Sessions last 12 hours
-and are stored in a signed, HTTP-only cookie.
+| Step | Owner | What happens | Status reached |
+| ---- | ----- | ------------ | -------------- |
+| 1 | FP&A | Initiate cycle, upload fleet | S01 |
+| 2 | Sales + Maintenance | Parallel checks on every crane | S02 |
+| 3 | Finance | Deduplicate and finalise the list | S04 / S08 / S03 |
+| 4 | Strategy + BUs | International rental and BU award | S04 → S07 → S16 or S08 |
+| 5 | Marketing | Catalogue window | S08 → S09 |
+| 6 | SCM | Domestic and international sale | S09 → S18 or S11 |
+| 7 | Management + SCM | Scrap sale | S11 → S19 or S20 |
+| 8 | Finance | Close the cycle in SAP | Locked / closed |
 
-### Step 2 — Download the workbook
+### Step 1 — FP&A initiates the FIRM cycle
 
-Go to **Import Data** (`/import`). Two downloads are available:
+- FP&A starts the cycle by uploading the fleet in the standard Excel template. The
+  file has **nine columns**: the five crane fields — Equipment ID, Equipment
+  Description, YOM, Yield % and Utilisation % — plus four SAP fields — SAP Status,
+  SO Number, SO Start Date and SO End Date. Any row with a blank field is sent back
+  to FP&A.
+- Because this build has **no SAP connection**, FP&A **enters the four SAP fields
+  manually** from the SAP system of record when uploading the file. In production
+  they are pulled automatically from SAP, so nobody has to type them. The SO End Date
+  is the "Execution allowed from" date.
+- The app calculates each crane's age from its YOM and sets the **Old Fleet flag**
+  automatically.
+- The Sales and Maintenance checks then open **together** for every crane in the
+  upload (status **S01**).
 
-- **Download template** — a blank workbook with the correct sheets and headers.
-- **Download sample fleet** — a realistic example you can study or import.
+### Step 2 — Parallel checks by Sales and Maintenance
 
-Both are also available directly:
+- Sales and Maintenance work through the full fleet list **at the same time**, and
+  every crane goes through **both** checks. This is parallel, not sequential.
+- **Sales check** — confirm whether the crane is marketable (Marketable / Not
+  marketable), flag whether it is NRG (Yes / No), and note the expected deployment
+  duration in months. This tells Strategy and SCM how long the crane could stay busy.
+- **Maintenance check** — mark every crane Deployable or Non-Deployable and give a
+  reason for Non-Deployable.
+- Because the Old Fleet flag was already set in Step 1, all three inputs are in as
+  soon as Sales and Maintenance submit (status **S02**). The Global Administrator
+  follows up with anyone who hasn't submitted yet.
 
-```
-GET /api/template?kind=template
-GET /api/template?kind=sample
-```
+### Step 3 — Finance deduplicates and finalises the list
 
-### Step 3 — Fill the workbook
+- Finance applies the Section 4 logic so each crane ends up with **one final
+  category** and one route.
+- Finance then finalises the FIRM list and routes each crane:
 
-Use the three sheets described in [section 6](#6-workbook-reference). The minimum
-viable workbook is a **Fleet Master** sheet with Asset Code, Model and Year of
-Manufacture. Performance and retention sheets are optional but determine whether the
-NRG test can be concluded.
+| Final category | Route | Status |
+| -------------- | ----- | ------ |
+| Old Fleet and NRG | Strategy for international rental | S04 |
+| Non-Deployable | Sale process directly | S08 |
+| No flag | Not in FIRM this cycle — stays in the active fleet | S03 |
 
-### Step 4 — Validate (preview)
+### Step 4 — International rental via Strategy and BUs
 
-On `/import`:
+- **Float to BUs** — Strategy offers every Old Fleet and NRG crane to **all**
+  international BUs at once (S04). Each BU can see the Equipment ID, description,
+  YOM, deployability, catalogue and current SO end date.
+- **BU quote** — each BU marks itself Interested or Not interested. An interested BU
+  sends an indicative quote: monthly rental rate, rental duration, expected rental
+  yield %, earliest start date, customer and country (S05). BUs may revise quotes
+  until the window closes.
+- **Strategy call** — Strategy weighs quotes on yield, duration and start date,
+  awards the crane to one BU, and records why. The award waits for sign-off from the
+  Strategy Head, and from the **CSO if the yield falls below the expected rate**
+  (S06).
+- **Reserved** — once awarded, the crane is reserved for that BU (S07). **No SO is
+  created at this stage**, so it can still be claimed back before transfer.
+- **Deployed** — Strategy deploys the crane to the international entity through an
+  **SAP asset transfer**, on or after the current SO end date (S16 — Completed —
+  International Transfer).
+- **No taker** — if no BU quotes, or Strategy accepts none, by the end of the **BU
+  window (proposed: 20 days)**, the crane moves on to sale (S08).
 
-1. Drag the workbook onto the drop zone, or choose a file.
-2. Set the **evaluation date** (defaults to today; it cannot be in the future).
-3. Click **Validate workbook**.
+### Step 5 — Marketing catalogue window
 
-The preview shows, before anything is saved:
+- Before a crane reaches SCM, Marketing gets a fixed window (**proposed: 5 working
+  days**) to upload its catalogue: photos, a short video, the spec sheet, load chart
+  and a condition summary (S08).
+- When the window closes, the crane moves to SCM **whether or not the catalogue is
+  ready** (S09). If the catalogue is missing, the Global Administrator is alerted.
 
-- workbook statistics — assets, performance rows, retention rows, models used,
-  errors, warnings;
-- the detected sheet names;
-- all validation issues, grouped as errors and warnings;
-- a full preview table with each crane's age, classification flags, primary class,
-  average utilisation and average monthly yield.
+### Step 6 — Sale by SCM (domestic and international)
 
-**Errors block the commit. Warnings do not.**
+- **Buyer search** — SCM looks for buyers in domestic and international markets at
+  the same time and gathers quotations (S09).
+- **Approval** — once SCM picks a quotation, FP&A checks the price and management
+  approves it per Section 7 (S10).
+- **Sold** — after approval, the sale SO is created in SAP and the crane is locked
+  (S18). Handover is on or after the current SO end date.
+- **No buyer** — if no acceptable quotation arrives within the **sale window
+  (proposed: 60 days)**, the crane goes to management to decide on a scrap sale
+  (S11).
 
-### Step 5 — Commit
+### Step 7 — Scrap sale
 
-If there are no errors and you are a Preparer or Administrator, click **Commit
-import**. The app:
+- **Scrap approval** — management approves a scrap sale for cranes that could not be
+  sold, usually Non-Deployable ones (S12). If management does not approve, the crane
+  is carried over to the next cycle (S20).
+- **Scrap sale** — SCM runs the scrap sale, FP&A checks the scrap price, and the
+  scrap sale SO is created in SAP (S19).
 
-1. upserts the fleet master by Asset Code;
-2. upserts performance rows by asset + financial year;
-3. upserts retention rows by asset + evaluation date;
-4. creates a new evaluation run with the policy snapshot and every reason;
-5. writes an `IMPORT_COMMITTED` audit entry.
+### Step 8 — Close
 
-You are taken to the new run. If you are not a Preparer, you can still validate and
-inspect the preview, but the commit button is not available.
+- **SAP record** — every exit is recorded in SAP: an asset transfer (international
+  deployment), a rental SO (domestic rent after a claim-back), a sale SO (sold), or a
+  scrap sale SO (scrapped).
+- **Locked** — once the SO or asset transfer is in place, **nobody can claim the
+  crane**. Finance closes it out in the FIRM cycle and the asset register is updated.
+- **Next cycle** — a crane deployed internationally moves onto the receiving
+  entity's books through the SAP asset transfer, so it may not appear in the next
+  cycle's upload.
 
-### Step 6 — Prepare
+### Timing summary
 
-Open the run (`/runs/[id]`). A Preparer (or Administrator) sees the **Sign-off**
-panel and clicks **Prepare & send for review**. The status changes from
-*Pending preparation* to *Pending review*. A comment is optional but recommended.
-
-### Step 7 — Review
-
-A Reviewer opens the same run and either:
-
-- clicks **Review & send for approval** → *Pending approval*, or
-- clicks **Return for rework**, which **requires a comment** explaining what must be
-  corrected → *Returned for rework*.
-
-### Step 8 — Approve
-
-An Approver opens the run and clicks **Approve evaluation** → *Approved*. The run is
-now the fleet position.
-
-### Step 9 — Monitor and export
-
-- **Dashboard** (`/`) — fleet composition, capex at risk, priority actions, data
-  coverage and recent imports.
-- **Fleet Assets** (`/assets`) — searchable, filterable, sortable register with CSV
-  export.
-- **Asset detail** (`/assets/[code]`) — full reason trail, certificates, performance
-  history and retention assessment for one crane.
-- **Evaluation Runs** (`/runs`) — every run, its status and sign-off progress.
-- **Approvals** (`/approvals`) — the queue split into “awaiting your action”, “in the
-  chain (other roles)” and approved history.
-
-### Step 10 — Change policy or reclassify (when needed)
-
-- **Policy Settings** (`/settings`) — an Administrator edits thresholds. Existing
-  runs keep their snapshot.
-- **Reclassify current fleet** — a Preparer or Administrator creates a new run from
-  the saved fleet and the current policy, without re-uploading a workbook. Use this
-  after a threshold change.
+| Window | Proposed length | If it expires |
+| ------ | --------------- | ------------- |
+| International BU window | 20 days | Crane moves to sale (S08) if no quote is accepted. |
+| Marketing catalogue window | 5 working days | Crane moves to SCM (S09) even if the catalogue is missing; Admin is alerted. |
+| Sale window | 60 days | Crane goes to management for a scrap decision (S11). |
+| Conflict decision | 3 working days | Global Administrator reminds; after 5 working days, escalated to CEO. |
+| Claim-back execution | 15 days | Crane returns to the layer it was pulled from if no SO/reservation. |
 
 ---
 
-## 5. Classification logic
+## 4. Deduplication logic (Section 4)
 
-All rules are implemented in `src/lib/classify.ts`. The default policy is in
-`src/lib/policy.ts` and can be changed in `/settings`.
+Finance applies this once all three inputs are in. The rule is simple:
+**Non-Deployable always wins; otherwise Old Fleet beats NRG; if none apply, the
+crane is Not in FIRM.**
 
-### 5.1 Inputs used
+| Old Fleet | NRG | Non-Deployable | Final category | Route |
+| :-------: | :-: | :------------: | -------------- | ----- |
+| Yes | No | No | Old Fleet | Strategy — international rental |
+| No | Yes | No | Non-Revenue Generating | Strategy — international rental |
+| Yes | Yes | No | Old Fleet | Strategy — international rental |
+| No | No | Yes | Non-Deployable | Sale (then scrap sale if unsold) |
+| Yes | No | Yes | Non-Deployable | Sale (then scrap sale if unsold) |
+| No | Yes | Yes | Non-Deployable | Sale (then scrap sale if unsold) |
+| Yes | Yes | Yes | Non-Deployable | Sale (then scrap sale if unsold) |
+| No | No | No | Not in FIRM | Stays in active fleet |
 
-| Area | Inputs |
+**Overrides.** Finance can override a category, but **only with a written reason**.
+The original flags (Old Fleet, NRG, Non-Deployable) always stay visible on the crane
+record, so the override never hides where the crane came from.
+
+---
+
+## 5. Claim-back and conflict rules (Section 6)
+
+The **SO in SAP is the hard stop**. Before it exists, a crane can be claimed back;
+after it exists, no one can. The further a crane has moved through the process, the
+more senior the approval needed to pull it back.
+
+### 5.1 When a conflict happens
+
+If a claim-back lands on a crane that already has a live BU quote or a sale
+quotation, the crane moves to **S14 — Conflict — Decision Pending**. On S14,
+**everything is paused**: no new quotes are accepted, the window clock stops, and a
+decision is due within **3 working days**.
+
+| Conflict | Decided by | Status while waiting | If rental wins | If the other side wins |
+| -------- | ---------- | -------------------- | -------------- | ---------------------- |
+| SCM has a sale quotation; domestic Sales has a rental opportunity | **CBO** | S10 → S14 | S14 → S15. Sale approval stops, SCM tells the buyer, the crane leaves the sale flow. Sales creates the rental SO → S17. **No SO in 15 days → back to S09** (the sale quotation can be revived if still valid). | S14 → S10. Claim-back rejected; sale approval resumes and the window clock restarts. |
+| SCM has a sale quotation; International team has a rental opportunity | **CSO** (exception approval) | S10 → S14 | S14 → S07. Sale approval stops, SCM tells the buyer. Strategy reserves the crane for the BU and deploys via SAP asset transfer (S16). **Not reserved in 15 days → back to S09**. | S14 → S10. Claim-back rejected; sale approval resumes. |
+| Domestic Sales claims back a crane that BUs have quoted on or been awarded | **CBO and CSO together; CEO if they disagree** | S05 / S07 → S14 | Domestic wins: S14 → S15. BU quotes are closed and all BUs told. Sales creates the rental SO → S17. | International wins: S14 → S05 / S07. Domestic claim rejected; Strategy continues the BU award. |
+| Two BUs want the same crane | **Strategy** | Stays S05 — no conflict status | Selected BU: S05 → S07; other BUs told "not awarded". | — |
+
+**Record and escalation.** Every conflict decision is logged with who made it, the
+date, the reason and the option that lost out, so that option can be picked up again
+if the winning deal falls through. If a conflict is unresolved after **3 working
+days**, the Global Administrator sends a reminder; after **5 working days** it is
+escalated to the **CEO**.
+
+### 5.2 Claim-back rules
+
+| Rule | Detail |
 | ---- | ------ |
-| Old Fleet | Year of Manufacture, evaluation date |
-| Non-Deployable | Model (from the 67-model master), YOM, four certificate expiry dates, OEM support, spares availability, compliance status, repair quote, replacement capex |
-| NRG | Three consecutive financial years of available days, deployed days, rental revenue and capital employed; retention assessment (rentability commitment, NPV, sale price, capital-release return, crane return) |
-
-### 5.2 Old Fleet
-
-```
-age (years) = evaluation year − year of manufacture
-Old Fleet   = age > oldFleetYears          (default 15; strictly greater)
-```
-
-This is a **marketability** test. It is independent of the model-specific
-Non-Deployable threshold. A 16-year-old crane with a 25-year model threshold is Old
-Fleet but not Non-Deployable.
-
-### 5.3 Non-Deployable
-
-A crane is Non-Deployable if **any** of the following is true:
-
-#### (a) Model age threshold exceeded
-
-Each model in the approved master has a deployable life of **15, 20 or 25 years**.
-The test is:
-
-```
-age > model threshold
-```
-
-Models not in the master are imported with a warning; no model-specific threshold is
-applied, so this test cannot fail for them.
-
-#### (b) Statutory certificate lapsed
-
-Four certificates are tested:
-
-1. Fitness Certificate
-2. Lifting Equipment License
-3. Third-Party Inspection Certificate
-4. PESO / Factory License
-
-A certificate fails when:
-
-```
-evaluation date > expiry date + certGraceDays      (default grace: 30 days)
-```
-
-Missing expiry dates are a **warning**, not a failure. The asset detail page shows
-each certificate with its expiry, grace end and days remaining/lapsed.
-
-#### (c) Obsolescence triggers
-
-Four triggers are evaluated:
-
-| Trigger | Fails when |
-| ------- | ---------- |
-| OEM technical support discontinued | `OEM support = Discontinued` |
-| Critical spares unavailable | `Spares availability = Unavailable` |
-| Safety / regulatory / emission non-compliance | `Compliance status = Non-compliant` |
-| Repair cost above threshold | `repair quote ÷ replacement capex × 100 > repairPct` (default 25%) |
-
-**Scope.** By default these four triggers apply **only to Old Fleet cranes**,
-matching the policy wording (“Any crane in the Old Fleet”). Set
-**Obsolescence scope = All equipment** in `/settings` to apply them to every crane.
-When a trigger fires outside the scope, it is recorded as a warning with an
-explanation, not as a failure.
-
-> A missing input (blank OEM support, blank spares, blank compliance, missing capex
-> or repair quote) produces a **warning**, never a failure.
-
-### 5.4 NRG — Non-Revenue Generating
-
-NRG is a two-condition test. Both conditions must be met and fully testable before a
-crane is confirmed NRG.
-
-#### Condition 1 — sustained under-performance
-
-For each of the required consecutive financial years (default **3**):
-
-```
-utilisation %      = deployed days ÷ available days × 100
-monthly yield %    = (annual rental revenue ÷ capital employed) ÷ 12 × 100
-underperforms      = utilisation < nrgUtilPct  AND  monthly yield < nrgYieldPct
-```
-
-Defaults: `nrgUtilPct = 60`, `nrgYieldPct = 1.8` (1.8% per month ≈ 21.6% per annum).
-
-Condition 1 is met only when **every** required year underperforms on **both**
-measures. The engine selects the latest consecutive financial years present in the
-workbook, using an April–March financial year. Accepted labels include
-`FY2023-24`, `2023-24`, `2023/24` and `23-24`.
-
-If any required year is missing, or utilisation/capital employed is missing for a
-year, Condition 1 is **not testable** (`null`) and the crane is reported as
-**Insufficient data** rather than classified NRG.
-
-#### Condition 2 — retention economics
-
-The business team's retention assessment is used. Two sub-tests are evaluated:
-
-**2.1 — 5-year rentability not underwritten**
-
-```
-condition 2.1 = rentability committable = No
-                AND NPV (5 yr) < achievable sale price
-```
-
-**2.2 — capital release earns a superior return**
-
-```
-condition 2.2 = return on capital released > crane 5-year return
-```
-
-The engine requires **both 2.1 and 2.2 to be testable and met** for Condition 2 to
-be true. If either input is missing, Condition 2 is “cannot be tested” and the crane
-becomes **Potential NRG** (shown as **NRG Review**).
-
-#### NRG status matrix
-
-| Condition 1 | Condition 2 | NRG status | Primary class |
-| ----------- | ----------- | ---------- | ------------- |
-| Not testable | — | Insufficient data | Old Fleet / Healthy (as applicable) |
-| Not met | — | Not NRG | Old Fleet / Healthy (as applicable) |
-| Met | Not testable | Potential NRG | **NRG Review** |
-| Met | Met | **NRG confirmed** | **NRG** |
-| Met | Not met | Not NRG | Old Fleet / Healthy (as applicable) |
-
-### 5.5 Primary classification precedence
-
-```
-NON_DEPLOYABLE  →  NRG  →  NRG_REVIEW  →  OLD_FLEET  →  HEALTHY
-```
-
-Non-Deployable wins even if the crane is also NRG. This keeps the fleet register
-focused on the most severe action. The individual flags remain visible on the asset
-detail and run detail pages.
-
-### 5.6 Worked example
-
-Suppose a crane has:
-
-- YOM 2008, evaluation date 2026 → age 18 years
-- Model `LTM 1090` → threshold 20 years
-- Fitness certificate expired 45 days ago → grace 30 days → **lapsed**
-- Utilisation 52% / 55% / 58%, monthly yield 1.2% / 1.4% / 1.5% for three years
-- Retention: rentability not committable, NPV 1.8 Cr, sale price 2.4 Cr,
-  capital-release return 14%, crane return 9%
-
-Result:
-
-- Old Fleet: **yes** (18 > 15)
-- Non-Deployable: **yes** (fitness certificate lapsed)
-- NRG: Condition 1 met (all three years below 60% and 1.8%); Condition 2 met
-  (NPV 1.8 Cr < sale 2.4 Cr; 14% > 9%)
-- **Primary class: Non-Deployable** (highest precedence)
-
-The asset detail page would show the Old Fleet reason, the lapsed-certificate
-critical reason, and the NRG reasons, all with observed values and thresholds.
-
-### 5.7 Data sufficiency
-
-The app never guesses. Missing data is surfaced explicitly:
-
-- **NRG not testable** — fewer than the required consecutive years, or missing
-  utilisation/capital employed.
-- **Retention pending** — Condition 1 met but no retention assessment on or before
-  the evaluation date.
-- **Missing capex** — replacement capex blank, so capex-at-risk is understated.
-- **Model not in master** — imported with a warning, no model threshold applied.
-- **Certificates missing** — expiry dates blank; certificate test not performed.
-
-These counts appear in the dashboard **Data coverage** panel and can be opened as
-filtered register views.
+| **Real opportunity** | Every claim-back must include the customer, rental rate, duration and expected SO date — without these it is rejected. While awaiting sign-off, the crane sits in **S13 — Claim-Back Approval Pending**. |
+| **Non-Deployable cranes** | Cannot be claimed back for rental unless Maintenance first changes their status to Deployable. |
+| **15-day limit** | If a claimed-back crane doesn't get an SO (domestic) or isn't reserved for a BU (international) within **15 days** (proposed), it goes back to the layer it was pulled from. |
+| **Notify** | When a crane is claimed back, everyone working on it — BUs, Marketing, SCM and any buyers — is informed **the same day**. |
 
 ---
 
-## 6. Workbook reference
+## 6. Approvals at each layer (Section 7)
 
-### 6.1 Sheet names
+Every hand-off is confirmed by one named person. The value limits in the business
+process document are proposals, still to be confirmed by the CBO / CEO.
 
-The parser matches sheet names loosely (case and punctuation are ignored), so these
-all work:
+| Layer / decision | Prepared by | Approved by |
+| ---------------- | ----------- | ----------- |
+| Final FIRM list after deduplication | Finance | Finance Head |
+| Award crane to a BU for international rental | Strategy | Strategy Head; CSO if rental is below the expected rate |
+| Move crane from Strategy to sale (no BU interest) | Strategy | Automatic at end of BU window |
+| Sale | SCM; FP&A validates price | CBO |
+| Scrap sale (sale did not work out) | SCM; FP&A validates scrap price | MD |
+| Claim-back (by layer) | Sales or Strategy | As per Section 6 claim-back rules |
+| Exception: international rental over a sale quotation | Strategy | CSO |
+| Exception: domestic rental over a sale quotation | Sales | CBO |
 
-| Sheet | Accepted names |
-| ----- | -------------- |
-| Fleet Master | `Fleet Master`, `Fleet`, `Asset Master`, `Assets` |
-| Annual Performance | `Annual Performance`, `Performance`, `Utilisation`, `Utilization` |
-| Retention Assessment | `Retention Assessment`, `Retention` |
-
-Only **Fleet Master** is mandatory. Missing performance/retention sheets produce a
-warning, and the affected NRG tests cannot be concluded.
-
-### 6.2 Fleet Master
-
-One row per crane. Header names are matched by alias, so `Equipment Code`,
-`Crane ID`, `Asset No.` etc. all map to Asset Code.
-
-| Field | Required | Used for |
-| ----- | :------: | -------- |
-| Asset Code | ✅ | Identity; upsert key |
-| Model | ✅ | Model-specific age threshold |
-| Year of Manufacture (YOM) | ✅ | Old Fleet and model-age tests |
-| Description | — | Display |
-| OEM / Make | — | Display |
-| Category | — | Display; normalised to hydraulic telescopic / crawler lattice |
-| Capacity (MT) | — | Display |
-| Capitalisation Date | — | Data quality check |
-| Original Capex | — | Display |
-| Gross Block | — | Display |
-| Net Book Value | — | Display |
-| Replacement Capex | — | Capex at risk; repair-cost ratio |
-| Location / Region | — | Register filters, region breakdown |
-| Current Status | — | Display |
-| OEM Support Status | — | Obsolescence trigger |
-| Critical Spares Availability | — | Obsolescence trigger |
-| Safety / Regulatory / Emission Compliance | — | Obsolescence trigger |
-| Estimated Repair Cost | — | Obsolescence trigger |
-| Fitness Certificate Expiry | — | Certificate test |
-| Lifting Equipment License Expiry | — | Certificate test |
-| Third-Party Inspection Certificate Expiry | — | Certificate test |
-| PESO / Factory License Expiry | — | Certificate test |
-| Notes / Remarks | — | Display |
-
-**Validation rules**
-
-- Asset Code is mandatory and must be unique within the sheet.
-- Model is mandatory.
-- YOM must be a year between 1950 and the current year + 1.
-- Unknown models are **warnings**.
-- Negative capex/repair values are ignored with a warning.
-- Repair cost greater than replacement capex is a warning.
-- Invalid dates are warnings; use `YYYY-MM-DD` or `DD/MM/YYYY`.
-- Capitalisation date earlier than YOM is a warning.
-
-### 6.3 Annual Performance
-
-One row per crane per financial year.
-
-| Field | Required | Notes |
-| ----- | :------: | ----- |
-| Asset Code | ✅ | Must exist in Fleet Master |
-| Financial Year | ✅ | `2023-24`, `FY2023-24`, `2023/24`, `23-24` |
-| Available Days | Recommended | Denominator of utilisation |
-| Deployed Days | Recommended | Numerator of utilisation |
-| Rental Revenue | Recommended | Numerator of yield |
-| Operating Cost | Optional | Stored for reference |
-| Capital Employed | Recommended | Denominator of yield |
-
-- Three **consecutive** years are needed for the default NRG test.
-- Rows for assets not in Fleet Master are **errors** (orphans).
-- Invalid FY formats and duplicate asset/FY rows are warnings.
-- Deployed days greater than available days is a warning (utilisation > 100%).
-
-### 6.4 Retention Assessment
-
-The business team's five-year rentability view. One row per crane per assessment date.
-
-| Field | Required | Notes |
-| ----- | :------: | ----- |
-| Asset Code | ✅ | Must exist in Fleet Master |
-| Evaluation Date | Optional | Blank = the evaluation date chosen on the import screen |
-| 5-Year Rentability Committable | Recommended | Yes / No |
-| NPV of 5-Year Cash Flows (INR) | Recommended | Used in Condition 2.1 |
-| Achievable Sale Price (INR) | Recommended | Used in Condition 2.1 |
-| Return on Capital Released (%) | Recommended | Used in Condition 2.2 |
-| Crane 5-Year Return (%) | Recommended | Used in Condition 2.2 |
-| Recommendation | Optional | Retain / Redeploy / Sell / Scrap |
-| Justification | Optional | Free text |
-
-- The engine uses the latest retention row with an evaluation date **on or before**
-  the run's evaluation date.
-- Rows for assets not in Fleet Master are **errors**.
-- Duplicate asset/date rows are warnings.
-- Unreadable Yes/No values are warnings.
-
-### 6.5 Accepted cell formats
-
-**Numbers**
-
-- Plain rupees: `12500000`
-- Shorthand: `1.25 Cr`, `1.25 crore`, `45 L`, `45 lakh`, `250 K`
-- Currency symbols and commas are stripped: `₹1,25,00,000`
-- Percent signs are stripped: `21.6%` → `21.6`
-- Parentheses mean negative: `(5000)` → `-5000`
-
-**Dates**
-
-- `YYYY-MM-DD`
-- `DD/MM/YYYY` (India convention; day/month is swapped only when unambiguous)
-- Excel date cells
-
-**Yes/No fields**
-
-`Yes`, `No`, `Y`, `N`, `True`, `False`, `1`, `0`, `Available`,
-`Not Available`, `Compliant`, `Non-compliant`, etc. are normalised.
-
-### 6.6 Errors vs warnings
-
-| Severity | Effect |
-| -------- | ------ |
-| **Error** | Blocks the commit. The workbook must be corrected. |
-| **Warning** | Import is allowed; the data-quality issue is recorded and shown in the preview and run. |
-
-Typical errors: missing sheet, no header row, missing Asset Code/Model/YOM,
-duplicate Asset Code, orphan performance/retention rows, no valid assets.
-
-Typical warnings: unknown model, invalid date, missing certificate dates, missing
-capex, deployed > available days, duplicate performance/retention rows, unreadable
-Yes/No, repair cost > capex.
+- **System record.** All approvals are recorded in the app with the approver's name,
+  date and comments. An approval given by email or verbally **does not** move a crane
+  forward.
+- **Escalation.** If an approver hasn't acted within **3 working days**, the Global
+  Administrator sends a reminder; after **5 working days** it is escalated to the
+  next level.
 
 ---
 
-## 7. Page-by-page guide
+## 7. Crane statuses (Section 12.1)
 
-### 7.1 Dashboard (`/`)
+At any point, every crane has exactly **one** of these 20 statuses: eight Active,
+five Approval, one On Hold, four Locked, and two Closed. The cycle impact column
+says whether a crane in that status is carried forward to the next cycle or excluded
+from it. Next to the status, the app shows the crane's **SO End Date** (entered from
+SAP in the upload in this build), labelled **"Execution allowed from"**.
 
-The default landing page after sign-in. It shows the **latest evaluation**.
+| Code | Status | Layer | Type | Impact on cycle |
+| ---- | ------ | ----- | ---- | --------------- |
+| S01 | Pending Validation | L1 | Active | Carry forward |
+| S02 | Under Finance Review | L1 | Approval | Carry forward |
+| S03 | Not Flagged – Excluded | L2 | Closed | Exclude |
+| S04 | Offered to International BUs | L3 | Active | Carry forward |
+| S05 | BU Bid Evaluation | L4 | Active | Carry forward |
+| S06 | BU Award Approval Pending | L4 | Approval | Carry forward |
+| S07 | Reserved – Pending Deployment | L4 | Active | Carry forward |
+| S08 | Catalogue Preparation | L5 | Active | Carry forward |
+| S09 | Listed for Sale | L6 | Active | Carry forward |
+| S10 | Sale Approval Pending | L7 | Approval | Carry forward |
+| S11 | Scrap Approval Pending | L7 | Approval | Carry forward |
+| S12 | Scrap Sale in Progress | L7 | Active | Carry forward |
+| S13 | Claim-Back Approval Pending | Any before L8 | Approval | Carry forward |
+| S14 | Conflict – Decision Pending | L4 or L7 | On Hold | Carry forward |
+| S15 | Claimed Back – Rental SO Pending | Any before L8 | Active | Carry forward |
+| S16 | Completed – International Transfer | L8 | Locked | Exclude |
+| S17 | Completed – Domestic Rental | L8 | Locked | Exclude |
+| S18 | Completed – Sold | L8 | Locked | Exclude |
+| S19 | Completed – Scrapped | L8 | Locked | Exclude |
+| S20 | Scrap Not Approved – Carried Forward | – | Closed | Carry forward |
 
-- **Fleet assets** — total cranes and replacement capex.
-- **Old Fleet**, **Non-Deployable**, **NRG confirmed**, **Healthy** — counts and
-  capex. Old Fleet/Non-Deployable/NRG are **flag counts**; Healthy is a **primary
-  class** count.
-- **Pending approvals banner** — links to `/approvals` when runs are waiting.
-- **Classification mix** — primary class distribution.
-- **Priority actions** — highest-severity assets by replacement capex.
-- **Policy tests** — the current thresholds and how many cranes they flag.
-- **Data coverage** — NRG not testable, retention pending, missing capex.
-- **Portfolio by region** — fleet, Non-Deployable and NRG counts per region.
-- **Recent imports** — latest runs with status.
-
-If no fleet has been imported, the dashboard shows an onboarding empty state with
-links to import, download the template or download the sample fleet.
-
-### 7.2 Fleet Assets (`/assets`)
-
-The full register, 25 rows per page.
-
-- **Tabs** — All, Flagged, Non-Deployable, NRG, NRG review, Old Fleet, Healthy.
-- **Search** — asset code, description, model, location.
-- **Filters** — region, model, data-coverage issue.
-- **Sort** — risk (default), age, capex, asset code.
-- **Export CSV** — exports the current filter selection.
-
-Each row links to the asset detail page.
-
-### 7.3 Asset detail (`/assets/[code]`)
-
-One crane, in full:
-
-- identity, model, category, capacity, YOM, age vs threshold, region/location;
-- current flags and primary class;
-- replacement capex, utilisation and monthly yield;
-- **reason trail** grouped by Old Fleet / Non-Deployable / NRG, sorted by severity,
-  with observed values and thresholds;
-- **certificates** — expiry, grace end, days remaining or lapsed;
-- **performance history** — the financial years used, utilisation and yield;
-- **retention assessment** — the latest assessment on or before the run date;
-- the run the result came from and its sign-off status.
-
-### 7.4 Import Data (`/import`)
-
-Upload, validate and commit a workbook. Also shows:
-
-- what the workbook needs (three sheets);
-- what happens on commit (upsert, new run, sign-off, audit);
-- your access level.
-
-### 7.5 Evaluation Runs (`/runs`)
-
-Every run, newest first, with status, evaluation date, source file, asset counts,
-Non-Deployable and NRG counts. Filter by open/approved. Open a run to see detail.
-
-### 7.6 Run detail (`/runs/[id]`)
-
-- run header, status and sign-off chain;
-- summary stat cards;
-- classification results table with class filter tabs and per-asset reason preview;
-- **sign-off trail** — every action, actor, designation, timestamp and comment;
-- **audit log** — import and sign-off events linked to the run;
-- **sign-off panel** — the action available to your role;
-- run details and policy snapshot;
-- data coverage and import errors.
-
-### 7.7 Approvals (`/approvals`)
-
-The governance queue, split into:
-
-1. **Awaiting your action** — runs where your role is next and you did not record the
-   previous stage.
-2. **In the chain (other roles)** — runs waiting on someone else.
-3. **Blocked by segregation of duties** — runs where you recorded the previous stage.
-4. **Approved evaluations** — recent approved runs.
-
-Each card shows the run, evaluation date, counts and the next action.
-
-### 7.8 Model Master (`/models`)
-
-The authoritative list of **67 models** and their Non-Deployable age thresholds:
-
-| Bucket | Models | Description |
-| ------ | :----: | ----------- |
-| 15 years | 15 | Hydraulic mobile telescopic and lighter crawler cranes |
-| 20 years | 37 | Mid-size telescopic and lattice-boom cranes |
-| 25 years | 15 | Heavy-lift crawler and large telescopic cranes |
-
-The page also shows how many cranes of each model are in the current fleet, and any
-uploaded model names that are **not** in the master.
-
-### 7.9 Policy Settings (`/settings`)
-
-- View and edit thresholds (Administrator only).
-- See policy defaults.
-- See the seeded users and roles.
-- **Reclassify current fleet** (Preparer/Administrator) — creates a new run from the
-  saved fleet and current policy.
+**Locked (S16–S19)** means an SO or international asset transfer exists in SAP, so
+the crane cannot be claimed back. Only these four statuses and S03 are excluded at
+cycle close; S20 is closed but carried forward.
 
 ---
 
-## 8. Approval chain and audit
+## 8. Fields at each step (Section 11)
 
-### 8.1 Statuses
+Each field has **one owner and one source**. In production, anything that comes from
+SAP is pulled automatically rather than typed in; **in this build, where SAP is not
+connected, SAP Status and the SO fields are entered manually in the upload**. A crane
+cannot move to the next step until all its **mandatory (M)** fields for the current
+step are filled in.
 
-| Status | Meaning | Next action |
-| ------ | ------- | ----------- |
-| `PENDING` | Pending preparation | Preparer prepares |
-| `PREPARED` | Pending review | Reviewer reviews or returns |
-| `REVIEWED` | Pending approval | Approver approves or returns |
-| `APPROVED` | Approved | None — fleet position |
-| `RETURNED` | Returned for rework | Preparer re-prepares |
+| Step | Field | Filled by / source |
+| ---- | ----- | ------------------ |
+| 1 – Upload | Equipment ID (M) | FP&A — Excel |
+| 1 – Upload | Equipment Description (M) | FP&A — Excel |
+| 1 – Upload | YOM (M) | FP&A — Excel |
+| 1 – Upload | Yield % (M) | FP&A — Excel |
+| 1 – Upload | Utilisation % (M) | FP&A – Excel |
+| 1 – Upload | SAP Status (on rent / idle / sold) | FP&A – Excel, entered manually from SAP (pulled automatically in production) |
+| 1 – Upload | SO Number | FP&A – Excel, entered manually from SAP (pulled automatically in production) |
+| 1 – Upload | SO Start Date | FP&A – Excel, entered manually from SAP (pulled automatically in production) |
+| 1 – Upload | SO End Date — shown at every step as "Execution allowed from"; no new SO or handover before it | FP&A – Excel, entered manually from SAP (pulled automatically in production) |
+| 1 – Upload | Age and Old Fleet flag | System – from YOM |
+| 2 – Sales check | Marketability: Marketable / Not marketable (M) | Sales |
+| 2 – Sales check | Non-Revenue Generating: Yes / No (M) | Sales |
+| 2 – Sales check | Expected deployment duration in months (M if marketable) | Sales |
+| 2 – Sales check | Remarks | Sales |
+| 2 – Maintenance check | Deployability status: Deployable / Non-Deployable (M) | Maintenance |
+| 2 – Maintenance check | Reason if Non-Deployable (M) | Maintenance |
+| 3 – Finance | Final category (M) and override reason if any | Finance |
+| 4 – International rental | BU response: Interested / Not interested (M) | Each BU |
+| 4 – International rental | Possible quote: rental rate per month, rental duration, expected rental yield %, earliest start date (on or after current SO end date), customer, country (M if interested) | Each BU |
+| 4 – International rental | Selected BU and reason (M) | Strategy |
+| 4 – International rental | Asset transfer document number and deployment date | SAP |
+| 5 – Catalogue | Photos, video, spec sheet, load chart, condition summary (upload) | Marketing |
+| 6 – Sale | Market (domestic / international), buyer, quotation value, quotation date (M) | SCM |
+| 6 – Sale | Price validation (M) | FP&A |
+| 6 – Sale | Management approval (M) | CBO / CEO / MD per Section 7 |
+| 6 – Sale | Sale SO number | SAP |
+| 7 – Scrap sale | Scrap approval (M) | Management |
+| 7 – Scrap sale | Scrap buyer, scrap price (M) | SCM |
+| 7 – Scrap sale | Scrap sale SO number | SAP |
+| Any step | Claim-back request: team, opportunity details, reason (M) | Sales or Strategy |
 
-### 8.2 Transitions
+### The upload file has nine columns
 
-```
-PENDING ──PREPARE──▶ PREPARED ──REVIEW──▶ REVIEWED ──APPROVE──▶ APPROVED
-   ▲                    │                   │
-   │                    └────RETURN─────────┘
-   │                            │
-   └──────────RE-PREPARE──── RETURNED
-```
+The uploaded Excel has **nine columns**: five crane fields and four SAP fields.
 
-- **PREPARE** — requires PREPARER or ADMIN. From PENDING or RETURNED.
-- **REVIEW** — requires REVIEWER or ADMIN. From PREPARED.
-- **APPROVE** — requires APPROVER or ADMIN. From REVIEWED.
-- **RETURN** — requires REVIEWER or ADMIN from PREPARED, or APPROVER or ADMIN from
-  REVIEWED. **A comment is mandatory.**
+| # | Column | Meaning | Source in this build |
+| - | ------ | ------- | -------------------- |
+| 1 | **Equipment ID** | Unique crane identifier from the asset register. | FP&A |
+| 2 | **Equipment Description** | Short description of the crane. | FP&A |
+| 3 | **YOM** | Year of manufacture — age and the Old Fleet flag are derived from this. | FP&A |
+| 4 | **Yield %** | Yield percentage for the crane. | FP&A |
+| 5 | **Utilisation %** | Utilisation percentage for the crane. | FP&A |
+| 6 | **SAP Status** | Current status: on rent / idle / sold. | Entered manually from SAP |
+| 7 | **SO Number** | Current sales order number, if any. | Entered manually from SAP |
+| 8 | **SO Start Date** | Start date of the current SO. | Entered manually from SAP |
+| 9 | **SO End Date** | End date of the current SO — the "Execution allowed from" date. | Entered manually from SAP |
 
-### 8.3 Segregation of duties
+**Why are SAP fields in the Excel?** This build has **no SAP connection**, so FP&A
+enters SAP Status, SO Number, SO Start Date and SO End Date manually from the SAP
+system of record when uploading the fleet. **In production these four fields are
+pulled automatically from SAP** and are not typed by hand. Either way they are shown
+at every step, and the **SO End Date** drives the "Execution allowed from" rule: no
+new SO, deployment or handover may happen before it.
 
-For non-Administrators, the same person cannot record consecutive stages of the same
-run. The app checks the latest approval entry and blocks the action with a clear
-message. Use a different reviewer/approver, or an Administrator override.
-
-### 8.4 Audit events
-
-Every important action writes to the audit log with actor, timestamp and details:
-
-| Action | When |
-| ------ | ---- |
-| `IMPORT_COMMITTED` | A workbook is committed |
-| `RUN_PREPARE` | A run is prepared |
-| `RUN_REVIEW` | A run is reviewed |
-| `RUN_APPROVE` | A run is approved |
-| `RUN_RETURN` | A run is returned for rework |
-| `RUN_RECLASSIFIED` | A new run is created from saved fleet data |
-| `POLICY_UPDATED` | Policy thresholds are changed (before/after stored) |
-
-Import events appear on the run detail page. Approval events appear in the sign-off
-trail and audit log. Policy changes are recorded against the `settings` entity.
-
----
-
-## 9. Policy settings reference
-
-| Setting | Default | Range | Effect |
-| ------- | :-----: | :---: | ------ |
-| Old Fleet age | 15 years | 1–60 | Age strictly greater than this is Old Fleet |
-| NRG utilisation | 60% | 0–100 | Condition 1 utilisation threshold |
-| NRG monthly yield | 1.8% | 0–100 | Condition 1 yield threshold (≈ 21.6% p.a.) |
-| NRG consecutive years | 3 | 1–10 | Number of consecutive years required |
-| Repair cost trigger | 25% | 0–100 | Repair quote ÷ replacement capex |
-| Certificate grace | 30 days | 0–365 | Grace after expiry before a certificate is lapsed |
-| Obsolescence scope | Old Fleet only | Old Fleet only / All | Whether OEM/spares/compliance/repair triggers apply only to Old Fleet or to every crane |
-
-Changing a setting:
-
-- affects **new** evaluation runs only;
-- does not rewrite existing runs;
-- is recorded in the audit log with before/after values;
-- can be applied immediately by running **Reclassify current fleet**.
+Do **not** add other columns (flags, categories, prices or quotes) to the upload.
+The app derives age and the Old Fleet flag from YOM; later SAP references such as the
+asset transfer document number, sale SO number and scrap sale SO number are recorded
+in the app as those steps complete. Blank fields in the nine-column upload are
+rejected and sent back to FP&A.
 
 ---
 
-## 10. CSV export
+## 9. App routes
 
-`GET /api/export/assets` exports the current register selection. Columns:
+The rebuilt app exposes these routes. All of them except `/login` require sign-in.
 
-1. Asset Code
-2. Description
-3. Model
-4. OEM
-5. Category
-6. Capacity (MT)
-7. YOM
-8. Age (years)
-9. Age threshold (years)
-10. Region
-11. Location
-12. Current status
-13. Replacement capex (INR)
-14. Utilisation 3Y avg (%)
-15. Monthly yield 3Y avg (%)
-16. Old Fleet (Yes/No)
-17. Non-Deployable (Yes/No)
-18. NRG status
-19. Primary classification
-20. Critical findings
-21. Warnings
+| Route | Purpose |
+| ----- | ------- |
+| `/login` | Sign in with your FIRM account. First sign-in opens the guide. |
+| `/welcome` | First-login guide explaining the process, your role, the 20 statuses, the screens and how to read a crane record. Reopen it from the Help button. |
+| `/` | Dashboard — current cycle, crane counts by status and layer, approvals, conflicts and reminders. |
+| `/cranes` | Crane register — search and filter cranes by status, layer, category and type. |
+| `/cranes/[id]` | Crane detail — full record, flags, checks, quotes, approvals, conflict decisions and audit trail. |
+| `/cycles` | FIRM cycles — start/finish cycles and see their cranes. |
+| `/cycles/[id]` | Cycle detail — the cranes and progress of one FIRM cycle. |
+| `/approvals` | Approval queue — the decisions waiting on your role. |
+| `/import` | Upload the nine-column fleet Excel (five crane fields plus four SAP fields) to start a cycle. |
+| `/roles` | The 12 FIRM roles and what each one does. |
+| `/settings` | Application and workflow settings. |
 
-The export respects the same `q`, `classification`, `region`, `model`, `sort` and
-`data` query parameters as the register. The file is UTF-8 with a BOM so Excel opens
-it correctly, and is named `FIRM-Fleet-<evaluation-date>.csv`.
+Use `/import` to add a fleet, `/cranes` to follow individual cranes through the
+statuses in Section 7, and `/approvals` to act on the hand-offs in Section 6.
 
 ---
 
-## 11. Data storage and architecture (brief)
+## 10. Confidentiality banner
 
-- **Database** — PostgreSQL. Local development uses embedded PGlite in
-  `./.data/pglite`; production uses `DATABASE_URL`. The schema and seed users are
-  created automatically on first connection.
-- **Tables** — users, settings, uploads, assets, performance, retention,
-  evaluation_runs, evaluation_results, approvals, audit_log.
-- **Excel parsing** — SheetJS (`xlsx`) with header aliases, number/date
-  normalisation and row-level validation.
-- **Auth** — signed HTTP-only session cookie (HMAC-SHA256), 12-hour expiry, scrypt
-  password hashes.
-- **Runs** — immutable; each run stores its policy snapshot and per-asset
-  reasons/metrics.
-- **Upserts** — assets by Asset Code; performance by asset + FY; retention by asset +
-  evaluation date. Re-uploading corrects existing records rather than duplicating
-  them.
+Every authenticated page displays this notice:
 
-For installation, environment variables, scripts and Docker, see `README.md`.
+> **Confidential. Sanghvi Movers Limited. Internal use only.**
 
----
-
-## 12. Troubleshooting and FAQ
-
-**The commit button is disabled.**
-You are signed in as a Reviewer or Approver. Only a Preparer or Administrator can
-commit. Ask a Preparer to commit, or sign in with the Preparer account.
-
-**The workbook validates but the commit fails.**
-Check the error message. The most common cause is a validation **error** that
-appeared after the preview (for example, an orphan performance row). Fix the
-workbook and re-validate.
-
-**A crane is “NRG Review” instead of “NRG”.**
-Condition 1 is met but the retention assessment is missing or incomplete. Add a
-retention row with the rentability commitment, NPV, sale price, capital-release
-return and crane return, then re-import or reclassify.
-
-**A crane is “NRG not testable”.**
-There are fewer than three consecutive years of performance data, or utilisation /
-capital employed is missing for one of the years. Add the missing rows.
-
-**A model is flagged as “not in the approved master”.**
-The model name in the workbook does not match any of the 67 approved models. Correct
-the spelling or add the model to the master. Until then, no model-specific age
-threshold is applied.
-
-**A certificate is not failing even though it is expired.**
-Check the evaluation date and the grace period. A certificate only fails when the
-evaluation date is **after** expiry + grace days. Also confirm the expiry was parsed
-correctly (use `YYYY-MM-DD` or `DD/MM/YYYY`).
-
-**I changed a threshold but the dashboard still shows the old classification.**
-Existing runs keep their policy snapshot. Run **Reclassify current fleet** in
-`/settings` (or commit a new import) to apply the new policy.
-
-**The same person cannot review after preparing.**
-That is segregation of duties. Use a different reviewer or approver, or sign in as an
-Administrator.
-
-**I need to correct a committed import.**
-Fix the workbook and import it again. Assets are upserted by Asset Code, performance
-by asset + FY, retention by asset + date. A new run is created for sign-off; the old
-run remains for history.
-
-**Where do I see the audit trail?**
-On the run detail page (sign-off trail and audit log). Policy changes are recorded in
-the audit log against the settings entity.
-
-**Can I use this without SAP?**
-Yes. The app has no SAP dependency. The Excel workbook is the integration point.
-
----
-
-## 13. Quick reference card
-
-```
-SIGN IN              /login
-DASHBOARD            /
-FLEET REGISTER       /assets
-ASSET DETAIL         /assets/<asset-code>
-IMPORT               /import
-EVALUATION RUNS      /runs
-RUN DETAIL           /runs/<id>
-APPROVALS            /approvals
-MODEL MASTER         /models
-POLICY SETTINGS      /settings
-
-WORKBOOK             3 sheets: Fleet Master, Annual Performance, Retention Assessment
-MINIMUM FLEET ROW    Asset Code + Model + YOM
-NRG CONDITION 1      util < 60% AND monthly yield < 1.8% for 3 consecutive FYs
-MONTHLY YIELD        (annual rental revenue ÷ capital employed) ÷ 12 × 100
-NRG CONDITION 2      2.1 rentability not committable AND NPV < sale price
-                     AND 2.2 capital-release return > crane return
-PRIMARY CLASS        Non-Deployable > NRG > NRG Review > Old Fleet > Healthy
-SIGN-OFF             Prepared By → Reviewed By → Approved By
-SEGREGATION          Different person for consecutive stages (except Admin)
-```
-
----
-
-*FIRM — Fleet Classification Tool · Sanghvi Movers Limited · Confidential internal use.*
+If you do not see the banner on a signed-in page, treat the page as untrusted and
+report it. Quotes, prices and approvals shown in the app are internal-only
+information and must not be exported or shared outside the authorised group.

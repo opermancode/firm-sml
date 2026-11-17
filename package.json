@@ -2,14 +2,13 @@
   "name": "firm-fleet-classification",
   "version": "1.0.0",
   "private": true,
-  "description": "FIRM - Fleet classification tool for Old Fleet, Non-Deployable and NRG cranes (Sanghvi Movers Limited)",
+  "description": "FIRM - Fleet exit cycle for Old Fleet, NRG and Non-Deployable cranes (Sanghvi Movers Limited)",
   "scripts": {
     "dev": "next dev -p 3100",
     "build": "next build",
     "start": "next start -p 3100",
     "typecheck": "tsc --noEmit",
-    "excel": "tsx scripts/generate-excel.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "templates": "tsx scripts/generate-firm-templates.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.16",

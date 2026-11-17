@@ -1,6 +1,6 @@
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
-import { eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import { DDL } from "./ddl";
 import * as schema from "./schema";
@@ -54,56 +54,20 @@ async function initDb(): Promise<Database> {
 }
 
 const SEED_USERS = [
-  {
-    name: "System Administrator",
-    email: "admin@firm.local",
-    password: "Admin@12345",
-    role: "ADMIN",
-    designation: "System Administrator",
-  },
-  {
-    name: "Satish Irale",
-    email: "satish.irale@firm.local",
-    password: "Firm@12345",
-    role: "PREPARER",
-    designation: "AVP - SCM",
-  },
-  {
-    name: "Prajwal Kumar",
-    email: "prajwal.kumar@firm.local",
-    password: "Firm@12345",
-    role: "REVIEWER",
-    designation: "CBO",
-  },
-  {
-    name: "Abhijeet Sawarkar",
-    email: "abhijeet.sawarkar@firm.local",
-    password: "Firm@12345",
-    role: "REVIEWER",
-    designation: "VP",
-  },
-  {
-    name: "R. Manoj",
-    email: "r.manoj@firm.local",
-    password: "Firm@12345",
-    role: "REVIEWER",
-    designation: "VP",
-  },
-  {
-    name: "Gaurang Desai",
-    email: "gaurang.desai@firm.local",
-    password: "Firm@12345",
-    role: "APPROVER",
-    designation: "CEO",
-  },
-  {
-    name: "Rishi Sanghvi",
-    email: "rishi.sanghvi@firm.local",
-    password: "Firm@12345",
-    role: "APPROVER",
-    designation: "MD",
-  },
+  { name: "FP&A Team", email: "fpna@firm.local", password: "Firm@12345", role: "FPNA", designation: "FP&A" },
+  { name: "Domestic Sales Team", email: "sales@firm.local", password: "Firm@12345", role: "SALES", designation: "Sales Team (Domestic)" },
+  { name: "Maintenance Team", email: "maintenance@firm.local", password: "Firm@12345", role: "MAINTENANCE", designation: "Maintenance Team" },
+  { name: "Finance Team", email: "finance@firm.local", password: "Firm@12345", role: "FINANCE", designation: "Finance" },
+  { name: "Strategy Team", email: "strategy@firm.local", password: "Firm@12345", role: "STRATEGY", designation: "Strategy Team (International)" },
+  { name: "International BU", email: "bu@firm.local", password: "Firm@12345", role: "BU", designation: "International BU" },
+  { name: "Marketing Team", email: "marketing@firm.local", password: "Firm@12345", role: "MARKETING", designation: "Marketing Team" },
+  { name: "SCM Team", email: "scm@firm.local", password: "Firm@12345", role: "SCM", designation: "SCM Team" },
+  { name: "CBO", email: "cbo@firm.local", password: "Firm@12345", role: "CBO", designation: "Chief Business Officer" },
+  { name: "CSO", email: "cso@firm.local", password: "Firm@12345", role: "CSO", designation: "Chief Strategy Officer" },
+  { name: "MD", email: "md@firm.local", password: "Firm@12345", role: "MD", designation: "Managing Director" },
+  { name: "Global Administrator", email: "admin@firm.local", password: "Firm@12345", role: "GLOBAL_ADMIN", designation: "Global Administrator" },
 ];
+
 
 async function seed(db: Database): Promise<void> {
   const [{ count }] = await db
@@ -123,6 +87,41 @@ async function seed(db: Database): Promise<void> {
         })),
       )
       .onConflictDoNothing();
+  } else {
+    // Migrate accounts from the previous classification tool in place so that
+    // foreign keys from the old audit tables stay valid. Any remaining role
+    // accounts are added after the existing rows are updated.
+    const existing = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .orderBy(asc(schema.users.id));
+    for (let index = 0; index < existing.length && index < SEED_USERS.length; index += 1) {
+      const target = SEED_USERS[index];
+      await db
+        .update(schema.users)
+        .set({
+          name: target.name,
+          email: target.email,
+          passwordHash: hashPassword(target.password),
+          role: target.role,
+          designation: target.designation,
+        })
+        .where(eq(schema.users.id, existing[index].id));
+    }
+    if (SEED_USERS.length > existing.length) {
+      await db
+        .insert(schema.users)
+        .values(
+          SEED_USERS.slice(existing.length).map((user) => ({
+            name: user.name,
+            email: user.email,
+            passwordHash: hashPassword(user.password),
+            role: user.role,
+            designation: user.designation,
+          })),
+        )
+        .onConflictDoNothing();
+    }
   }
 
   const existing = await db

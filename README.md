@@ -1,57 +1,78 @@
-# FIRM — Fleet Classification Tool
+# FIRM — Crane Cycle Workflow
 
-An internal tool for **Sanghvi Movers Limited** that ingests the crane fleet from an
-Excel workbook, classifies every crane against the FIRM policy, and routes the result
-through a governed sign-off chain.
+An internal app for **Sanghvi Movers Limited** that runs the FIRM cycle: it moves
+**Old Fleet**, **Non-Revenue Generating (NRG)** and **Non-Deployable** cranes to
+international rental, sale or scrap, with one owner per step, named approvals and an
+SAP record for every exit.
 
-No SAP connection is required. The fleet master, annual performance and retention
-assessments are uploaded from a standard workbook, validated, and stored locally.
+FIRM starts when FP&A uploads a nine-column fleet Excel: Equipment ID, Equipment
+Description, YOM, Yield %, Utilisation %, SAP Status, SO Number, SO Start Date and
+SO End Date. Because this build has **no SAP connection**, the four SAP fields are
+entered manually from the SAP system of record; in production they are pulled
+automatically from SAP. Sales and Maintenance review every crane in parallel, Finance
+deduplicates the flags, Old Fleet and NRG cranes are offered to international BUs
+before sale, and Non-Deployable cranes go straight to sale and then scrap if unsold.
+A crane leaves the cycle only when SAP records its exit — an SO or an international
+asset transfer. After that, nobody can claim it back.
+
+There is no live SAP connection in this build: SAP/SO details are entered manually in
+the upload from the SAP system of record (they are pulled automatically from SAP in
+production) and later SAP references are recorded in the workflow. See
+[USAGE.md](USAGE.md) for the full business process and [SETUP.md](SETUP.md) for local
+setup.
 
 ---
 
 ## What it does
 
-- **Excel ingestion** — three-sheet workbook (Fleet Master, Annual Performance,
-  Retention Assessment) with header aliases, date/number normalisation, and
-  row-level validation. Nothing is written until the preview is committed.
-- **Classification engine** — applies the policy to every crane:
-  - **Old Fleet** — age above the Old Fleet threshold (default 15 years).
-  - **Non-Deployable** — above the model-specific age threshold (15 / 20 / 25 years
-    from the 67-model master), lapsed statutory certificate, or repair cost above the
-    replacement-capex trigger.
-  - **NRG (Non-Revenue Generating)** — Condition 1 (utilisation and monthly yield on
-    capital employed both below threshold for three consecutive financial years)
-    **and** Condition 2 (retention not committable and NPV below sale price, or
-    capital-release return above the crane's return).
-  - **NRG Review** — Condition 1 is met but the retention assessment is missing, so
-    the crane is flagged for review instead of confirmed NRG.
-- **Dashboard** — fleet composition, replacement capex at risk, region/model
-  breakdowns and the latest evaluation.
-- **Fleet register** — filterable, searchable, sortable list with a full reason trail
-  per crane and CSV export.
-- **Evaluation runs** — every import creates an immutable run with a policy snapshot
-  and per-asset results, so historic classifications stay reproducible.
-- **Approval & audit** — Prepared By → Reviewed By → Approved By, with comments,
-  segregation of duties, and an audit log for imports, policy changes and sign-offs.
-- **Policy settings** — thresholds live in the database and are editable from the UI;
-  existing runs keep the snapshot they were computed with.
+- **Nine-column fleet upload** — FP&A uploads Equipment ID, Equipment Description,
+  YOM, Yield %, Utilisation %, SAP Status, SO Number, SO Start Date and SO End Date.
+  Age and the Old Fleet flag are derived from YOM. With no SAP connection in this
+  build, the four SAP fields are entered manually from SAP; in production they are
+  pulled automatically. SO End Date sets "Execution allowed from".
+- **Parallel Sales + Maintenance checks** — every crane gets a marketability / NRG
+  check from Sales and a Deployable / Non-Deployable check from Maintenance at the
+  same time, with the Global Administrator chasing missing submissions.
+- **Finance deduplication** — Non-Deployable wins; otherwise Old Fleet beats NRG;
+  otherwise the crane is Not in FIRM. Overrides require a written reason and the
+  original flags stay visible.
+- **International rental first** — Strategy floats Old Fleet and NRG cranes to all
+  international BUs at once (20-day window), evaluates quotes and awards a crane with
+  Strategy Head / CSO sign-off, then deploys it through an SAP asset transfer.
+- **Catalogue, sale and scrap** — Marketing gets a 5-working-day catalogue window;
+  SCM gathers domestic and international quotations in a 60-day sale window; unsold
+  cranes go to management for a scrap decision.
+- **Claim-back and conflicts** — before an SO exists, Sales or the International team
+  can claim a crane back. Competing rental and sale deals pause at S14 with a
+  3-working-day decision by CBO, CSO or Strategy (CEO if CBO and CSO disagree), and a
+  15-day limit to execute.
+- **Governed approvals** — Finance Head, Strategy Head, CSO, CBO and MD approve the
+  hand-offs in the approval matrix; every decision is recorded with name, date and
+  comments in the audit trail.
+- **20-status tracking** — every crane has exactly one of 20 statuses (S01–S20)
+  across Active, Approval, On Hold, Locked and Closed layers, with an
+  "Execution allowed from" date from the current SAP SO end date.
+- **Dashboard and register** — cycle progress, counts by status and layer, approvals,
+  conflicts, reminders, searchable crane list and full per-crane detail.
 
 ---
 
 ## Tech stack
 
-| Layer      | Choice |
-| ---------- | ------ |
-| Framework  | Next.js 16 (App Router) + React 19 + TypeScript |
-| Styling    | Tailwind CSS v4 |
-| Database   | PostgreSQL via Drizzle ORM |
-| Local DB   | Embedded PGlite (PostgreSQL in WASM) — zero install |
-| Excel      | SheetJS (`xlsx`) |
-| Auth       | Signed, HTTP-only session cookie (HMAC-SHA256) |
+| Layer | Choice |
+| ----- | ------ |
+| Framework | Next.js 16 (App Router) + React 19 + TypeScript |
+| Styling | Tailwind CSS v4 |
+| Workflow store | JSON-backed store at `.data/firm-workflow.json`, seeded automatically on first run |
+| Database | PostgreSQL via Drizzle ORM |
+| Local DB | Embedded PGlite (PostgreSQL in WASM) — zero install, for users and sessions |
+| UI primitives | Radix UI |
+| Excel | SheetJS (`xlsx`) |
+| Auth | Signed, HTTP-only session cookie (HMAC-SHA256) |
 
-The database driver is selected at runtime: set `DATABASE_URL` to use a real
-PostgreSQL server, or leave it empty to use the embedded PGlite database in
-`./.data/pglite`.
+Set `DATABASE_URL` to use a real PostgreSQL server, or leave it empty to use the
+embedded PGlite database in `./.data/pglite`. FIRM workflow data is stored
+independently in the JSON file.
 
 ---
 
@@ -61,30 +82,32 @@ Requirements: **Node.js 20.9+** (Node 22 recommended) and npm.
 
 ```bash
 npm install
-
-# Optional: regenerate the downloadable templates in public/templates
-npm run excel
-
-# Seed the demo fleet (parses the sample workbook through the real pipeline)
-npm run seed:demo
-
-# Start the app on http://localhost:3100
+cp .env.example .env.local   # then set SESSION_SECRET (see SETUP.md)
 npm run dev
 ```
 
-Open <http://localhost:3100> and sign in.
+Open <http://localhost:3100> and sign in. On first run the app creates and seeds
+`.data/firm-workflow.json` with a demonstration cycle, cranes, quotes, approvals and
+reminders — no import or seed command is needed.
 
 ### Demo credentials
 
-| Name | Role | Email | Password |
-| ---- | ---- | ----- | -------- |
-| System Administrator | ADMIN | `admin@firm.local` | `Admin@12345` |
-| Satish Irale (AVP – SCM) | PREPARER | `satish.irale@firm.local` | `Firm@12345` |
-| Prajwal Kumar (CBO) | REVIEWER | `prajwal.kumar@firm.local` | `Firm@12345` |
-| Abhijeet Sawarkar (VP) | REVIEWER | `abhijeet.sawarkar@firm.local` | `Firm@12345` |
-| R. Manoj (VP) | REVIEWER | `r.manoj@firm.local` | `Firm@12345` |
-| Gaurang Desai (CEO) | APPROVER | `gaurang.desai@firm.local` | `Firm@12345` |
-| Rishi Sanghvi (MD) | APPROVER | `rishi.sanghvi@firm.local` | `Firm@12345` |
+All demo accounts use the password **`Firm@12345`**.
+
+| Role | Email | Password |
+| ---- | ----- | -------- |
+| FP&A | `fpna@firm.local` | `Firm@12345` |
+| Sales | `sales@firm.local` | `Firm@12345` |
+| Maintenance | `maintenance@firm.local` | `Firm@12345` |
+| Finance | `finance@firm.local` | `Firm@12345` |
+| Strategy | `strategy@firm.local` | `Firm@12345` |
+| International BU | `bu@firm.local` | `Firm@12345` |
+| Marketing | `marketing@firm.local` | `Firm@12345` |
+| SCM | `scm@firm.local` | `Firm@12345` |
+| CBO | `cbo@firm.local` | `Firm@12345` |
+| CSO | `cso@firm.local` | `Firm@12345` |
+| MD | `md@firm.local` | `Firm@12345` |
+| Global Administrator | `admin@firm.local` | `Firm@12345` |
 
 Seeded accounts are for evaluation only. Change the passwords and
 `SESSION_SECRET` before any shared deployment.
@@ -101,88 +124,67 @@ Copy `.env.example` to `.env.local` and adjust as needed.
 | `PGLITE_DIR` | No | Directory for the embedded database (default `./.data/pglite`). |
 | `SESSION_SECRET` | Recommended | HMAC key for session cookies. Set a long random value in shared environments. |
 
-The schema and seed users are created automatically on first connection.
+User accounts and sessions are created automatically on first connection. The FIRM
+workflow store at `.data/firm-workflow.json` is created and seeded automatically on
+first run; delete that file (with the dev server stopped) to reset the demo data.
 
 ---
 
-## Using the tool
+## Routes
 
-1. **Import** (`/import`) — download the blank template or sample workbook, upload a
-   workbook, choose the evaluation date, and click **Validate workbook**.
-   - Errors block the commit; warnings are imported with a data-quality flag.
-   - The preview shows the classification result before anything is saved.
-2. **Commit** — creates the fleet records and a new **evaluation run**.
-3. **Prepare** (`/runs/[id]`) — the Preparer confirms the data and forwards the run.
-4. **Review** — the Reviewer validates and forwards, or returns it for rework.
-5. **Approve** — the Approver records final management approval.
-6. **Monitor** — the dashboard, fleet register, model master and approvals queue
-   always reflect the latest evaluation. Approved runs are the fleet position.
+| Route | Purpose |
+| ----- | ------- |
+| `/login` | Sign in (first sign-in opens the guide) |
+| `/welcome` | First-login guide to the workflow, roles, statuses and screens |
+| `/` | Dashboard — current cycle, crane counts by status and layer, approvals, conflicts and reminders |
+| `/cranes` | Crane register with filters and search |
+| `/cranes/[id]` | Full crane record — flags, checks, SAP data, quotes, approvals, conflicts and audit trail |
+| `/cycles` | FIRM cycles |
+| `/cycles/[id]` | One cycle's cranes and progress |
+| `/approvals` | Decisions waiting on your role |
+| `/import` | Upload the nine-column fleet Excel (5 crane + 4 SAP fields) to start a cycle |
+| `/roles` | The 12 FIRM roles and their responsibilities |
+| `/settings` | Workflow and application settings |
 
-### Workbook layout
-
-**1 · Fleet Master** — one row per crane. Required: Asset Code, Model, Year of
-Manufacture. Recommended: description, OEM, category, capacity, capitalisation date,
-original capex, gross block, net book value, replacement capex, location, region,
-current status, OEM support, spares availability, compliance status, repair quote and
-the four statutory certificate expiry dates.
-
-**2 · Annual Performance** — one row per crane per financial year (`FY2023-24`,
-`2023-24`, `23-24` accepted). Columns: Asset Code, FY, Available Days, Deployed Days,
-Rental Revenue, Operating Cost, Capital Employed. Three consecutive years are needed
-to test NRG Condition 1.
-
-**3 · Retention Assessment** — Asset Code, Evaluation Date, Rentability Committable
-(Yes/No), NPV (5 yr), Achievable Sale Price, Capital Release Return %, Crane Return %,
-Recommendation, Justification. Leave the evaluation date blank to use the evaluation
-date selected in the import screen.
-
-Monetary cells accept plain rupees (`12500000`) or shorthand (`1.25 Cr`, `45 L`).
-Dates accept `YYYY-MM-DD` or `DD/MM/YYYY`.
+Every authenticated page shows:
+**"Confidential. Sanghvi Movers Limited. Internal use only."**
 
 ---
 
-## Classification rules
+## Using the app
 
-### Old Fleet
+1. **Start a cycle** (`/import`) — FP&A uploads the nine-column workbook (five crane
+   fields plus the four SAP fields). Blank fields are rejected. Age and the Old Fleet
+   flag are derived automatically; the SAP fields are entered manually in this build
+   because SAP is not connected.
+2. **Parallel checks** — Sales records marketability, NRG and expected deployment
+   duration; Maintenance records Deployable / Non-Deployable and a reason. Both
+   teams review the full fleet at the same time.
+3. **Dedup** — Finance assigns one final category per crane (Section 4 of USAGE.md).
+4. **International rental** — Strategy offers Old Fleet and NRG cranes to all BUs,
+   evaluates quotes and awards a crane with the required sign-off, then deploys it by
+   SAP asset transfer.
+5. **Catalogue and sale** — Marketing uploads the catalogue; SCM gathers quotations;
+   FP&A validates price and management approves; a sale SO is created in SAP.
+6. **Scrap or close** — unsold cranes go to management for scrap approval, then a
+   scrap sale SO; Finance closes exited cranes and updates the asset register.
 
-Age = evaluation date − Year of Manufacture. A crane older than the Old Fleet
-threshold (default **15 years**) is Old Fleet.
+### Upload template
 
-### Non-Deployable
+The workbook has exactly nine columns — the five crane fields (Equipment ID,
+Equipment Description, YOM, Yield %, Utilisation %) plus four SAP fields (SAP Status,
+SO Number, SO Start Date, SO End Date). The app derives age and the Old Fleet flag
+from YOM. **This build has no SAP connection**, so the four SAP fields are entered
+manually from the SAP system of record; in production they are pulled automatically
+from SAP. The SO End Date is shown as **"Execution allowed from"**: no new SO,
+deployment or handover happens before it.
 
-Any one of the following:
+Templates are available in `public/templates/`:
 
-- Age above the **model-specific threshold** from the approved master
-  (15 / 20 / 25 years).
-- A statutory certificate (fitness, lifting, TPI, PESO) lapsed beyond the grace
-  period (default **30 days**).
-- Repair quote above **25%** of prevailing replacement capex (obsolescence trigger).
-- For Old Fleet cranes (default scope): OEM support withdrawn, critical spares
-  unavailable, or compliance failure. Set the scope to **All equipment** in policy
-  settings to apply these triggers to every crane.
-
-### NRG — Non-Revenue Generating
-
-**Condition 1** — for each of the last three financial years:
-
-- utilisation below **60%**, **and**
-- monthly yield on capital employed below **1.8%** (≈ 21.6% annualised).
-
-Monthly yield is computed as:
-
-```
-monthly yield % = (annual rental revenue ÷ capital employed) ÷ 12 × 100
-```
-
-**Condition 2** — either:
-
-- **2.1** the business cannot commit five-year rentability **and** NPV is below the
-  achievable sale price, or
-- **2.2** the return from releasing capital exceeds the crane's return.
-
-A crane that meets Condition 1 but has no retention assessment is **NRG Review**
-(potential NRG). Missing performance years make the NRG test **not testable**; the
-asset is reported in the data-coverage panel rather than classified NRG.
+| File | Purpose |
+| ---- | ------- |
+| `FIRM-Fleet-Upload-Template.xlsx` | Blank nine-column upload template (5 crane + 4 SAP fields) |
+| `FIRM-Sample-Fleet.xlsx` | Worked example of a fleet upload |
 
 ---
 
@@ -191,20 +193,29 @@ asset is reported in the data-coverage panel rather than classified NRG.
 ```
 src/
   app/
-    (app)/               authenticated pages: dashboard, assets, runs, approvals,
-                         models, settings, import
-    api/                 import, template download, CSV export, health
-    actions/             server actions: auth, approvals, policy, reclassify
+    (app)/               authenticated pages: dashboard, cranes, cycles, approvals,
+                         import, roles, settings
+    api/                 template download, CSV export, health
+    actions/             server actions: auth, workflow, approvals
     login/               sign-in page
-  components/            UI: sidebar, badges, stat cards, import wizard,
-                         sign-off panel, policy form
-  db/                    Drizzle schema, DDL, PGlite/Postgres initialiser, seed
-  lib/                   classification engine, Excel parser, import pipeline,
-                         policy store, queries, auth, workflow constants, format
-scripts/
-  generate-excel.ts      writes the blank template and sample workbook
-  seed-demo.ts           imports the sample fleet as demo data
-public/templates/        downloadable .xlsx templates
+  components/            UI: sidebar, badges, tables, dialogs, shell
+  db/                    Drizzle schema, DDL, PGlite/Postgres initialiser, user seed
+  lib/
+    firm/                workflow domain: roles, 20 statuses, dedup rules, approval
+                         matrix, conflict rules, JSON-backed store
+    auth.ts              sessions and password hashing
+    excel.ts             nine-column workbook parser
+    api.ts               typed data facade
+public/
+  brand/sml-logo.png     Sanghvi Movers Limited logo
+  icon.png               browser favicon
+  templates/             upload template and sample fleet
+.data/
+  firm-workflow.json     workflow store (auto-seeded on first run)
+  pglite/                embedded database (users and sessions)
+scripts/                 utility scripts
+USAGE.md                 business process and functional source of truth
+SETUP.md                 local setup guide
 ```
 
 ---
@@ -217,8 +228,9 @@ public/templates/        downloadable .xlsx templates
 | `npm run build` | Production build. |
 | `npm start` | Start the production server on port 3100. |
 | `npm run typecheck` | TypeScript check without emitting. |
-| `npm run excel` | Regenerate `public/templates/*.xlsx`. |
-| `npm run seed:demo` | Import the sample fleet into the configured database. |
+
+Workflow demo data needs no script — it is seeded on first run into
+`.data/firm-workflow.json`.
 
 ---
 
@@ -231,9 +243,10 @@ npm run build
 npm start
 ```
 
-The schema, policy defaults and user accounts are created automatically on first
-connection. Point `DATABASE_URL` at a managed PostgreSQL instance for a durable
-deployment; PGlite is intended for local use and demos.
+The user accounts are created automatically on first connection. Point
+`DATABASE_URL` at a managed PostgreSQL instance for a durable deployment; PGlite is
+intended for local use and demos. Ensure `.data/firm-workflow.json` is writable by
+the app process (or reset it with the server stopped).
 
 ### Docker
 
@@ -243,19 +256,20 @@ docker compose up --build
 
 This starts PostgreSQL and the app on <http://localhost:3100>. Override
 `SESSION_SECRET` (and the database credentials) for anything beyond a local demo.
-The demo users are seeded automatically; run the demo fleet import from the UI or
-with `docker compose exec app node -e "..."` if you want sample data.
 
 ---
 
 ## Notes & assumptions
 
-- The 67-model master and the 15 / 20 / 25-year age thresholds are taken from the
-  FIRM definition document and are validated on upload. Unknown models are imported
-  with a warning and no model-specific threshold.
-- Obsolescence triggers are applied to Old Fleet cranes by default, matching the
-  document's wording ("Any crane in the Old Fleet"). The scope is configurable.
-- Retention assessments use the latest row with an evaluation date on or before the
-  run's evaluation date.
-- The application stores no passwords in plain text (scrypt hashes) and sessions are
-  signed HTTP-only cookies.
+- The 20 crane statuses, 12 roles, dedup table, approval matrix and conflict rules in
+  this app come from the FIRM Business Process Document; USAGE.md is the readable
+  reference.
+- "Execution allowed from" is the SO End Date entered in the upload from SAP —
+  manually in this build, automatically in production. It is shown on every crane and
+  gates any new SO, deployment or handover.
+- This build has no live SAP connection. SAP Status, SO Number, SO Start Date and SO
+  End Date are entered manually in the upload; later SAP references (asset transfer,
+  sale SO, scrap SO) are recorded in the app. SAP remains the hard stop: once an SO or
+  international asset transfer is recorded, a crane cannot be claimed back and
+  Finance closes it out of the cycle.
+- Password hashing uses scrypt and sessions are signed, HTTP-only cookies.

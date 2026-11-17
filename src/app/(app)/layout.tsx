@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { getRuns } from "@/lib/api";
+import { getApprovalQueue, getCurrentCycle } from "@/lib/firm/api";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ShieldAlert } from "lucide-react";
@@ -8,35 +8,23 @@ export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const runs = await getRuns(200);
+  const [cycle, queue] = await Promise.all([
+    getCurrentCycle(),
+    getApprovalQueue(user.role),
+  ]);
 
-  const pendingApprovals = runs.filter((run) =>
-    ["PENDING", "PREPARED", "REVIEWED"].includes(run.status),
-  ).length;
-  const approvedDate =
-    runs.find((run) => run.status === "APPROVED")?.evaluationDate ?? null;
+  const shellUser = {
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    designation: user.designation,
+  };
 
   return (
     <div className="app-canvas min-h-screen">
-      <Sidebar
-        user={{
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          designation: user.designation,
-        }}
-        pendingApprovals={pendingApprovals}
-      />
+      <Sidebar user={shellUser} pendingApprovals={queue.length} />
       <div className="lg:pl-[252px]">
-        <TopBar
-          user={{
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            designation: user.designation,
-          }}
-          approvedDate={approvedDate}
-        />
+        <TopBar user={shellUser} cycle={cycle} />
         <main className="mx-auto max-w-[1480px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
           {children}
         </main>
@@ -47,9 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               Confidential. Sanghvi Movers Limited. Internal use only.
             </strong>
           </span>
-          <span>
-            FIRM · Fleet Inventory &amp; Retention Management · Policy v1.0
-          </span>
+          <span>FIRM · Fleet exit cycle · Sanghvi Movers Limited</span>
         </footer>
       </div>
     </div>

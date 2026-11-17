@@ -5,13 +5,9 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { initials } from "@/lib/format";
+import { ROLE_MAP, type Role } from "@/lib/firm/workflow";
 
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Administrator",
-  PREPARER: "Preparer",
-  REVIEWER: "Reviewer",
-  APPROVER: "Approver",
-};
+const roleLabel = (role: string) => ROLE_MAP[role as Role]?.short ?? role;
 
 export function UserMenu({
   name,
@@ -50,7 +46,7 @@ export function UserMenu({
                 {name}
               </span>
               <span className="block text-[10px] leading-tight text-faint">
-                {ROLE_LABEL[role] ?? role}
+                {roleLabel(role)}
               </span>
             </span>
             <ChevronDown size={13} className="hidden text-faint sm:block" />
@@ -75,7 +71,7 @@ export function UserMenu({
               </div>
               <div className="mt-2 flex items-center gap-1.5">
                 <span className="badge badge-brand">
-                  <ShieldCheck size={10} /> {ROLE_LABEL[role] ?? role}
+                  <ShieldCheck size={10} /> {roleLabel(role)}
                 </span>
                 <span className="text-[10px] text-faint">12-hour session</span>
               </div>
@@ -84,7 +80,7 @@ export function UserMenu({
             <DropdownMenu.Item
               className="flex cursor-default items-center gap-2 rounded-lg px-2.5 py-2 text-[12px] text-muted outline-none data-[highlighted]:bg-panel-2 data-[highlighted]:text-ink"
               onSelect={() => {
-                window.location.href = `/assets?q=${encodeURIComponent(email)}`;
+                window.location.href = "/roles";
               }}
             >
               <UserRound size={13} /> Account &amp; directory

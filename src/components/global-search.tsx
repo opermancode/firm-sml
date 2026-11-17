@@ -36,7 +36,7 @@ export function GlobalSearch() {
       onSubmit={(event) => {
         event.preventDefault();
         const q = value.trim();
-        router.push(q ? `/assets?q=${encodeURIComponent(q)}` : "/assets");
+        router.push(q ? `/cranes?q=${encodeURIComponent(q)}` : "/cranes");
         setOpen(false);
         inputRef.current?.blur();
       }}
@@ -81,7 +81,7 @@ export function GlobalSearch() {
             Search the fleet register for <strong className="text-ink">“{value.trim()}”</strong>
           </button>
           <Link
-            href={`/assets?q=${encodeURIComponent(value.trim())}`}
+            href={`/cranes?q=${encodeURIComponent(value.trim())}`}
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] text-muted transition hover:bg-panel-2 hover:text-ink"
           >

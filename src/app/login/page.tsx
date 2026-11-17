@@ -30,19 +30,19 @@ export default async function LoginPage() {
 
       <div className="relative mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-faint">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-nd" /> Non-Deployable
+          <span className="h-2 w-2 rounded-full bg-brand" /> Active
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-nrg" /> NRG
+          <span className="h-2 w-2 rounded-full bg-nrg-review" /> Approval
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-nrg-review" /> NRG Review
+          <span className="h-2 w-2 rounded-full bg-nd" /> On hold / conflict
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-old" /> Old Fleet
+          <span className="h-2 w-2 rounded-full bg-old" /> Locked in SAP
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-healthy" /> Healthy
+          <span className="h-2 w-2 rounded-full bg-healthy" /> Closed
         </span>
       </div>
     </div>
